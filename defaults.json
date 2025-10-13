@@ -1,0 +1,10 @@
+{
+    "window_setup_defaults": {
+        "xresolution": 1280,
+        "yresolution": 720,
+        "fullscreen": false,
+        "fps": 60
+    },
+
+    "language": "en"
+}
