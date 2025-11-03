@@ -14,8 +14,10 @@ def window_configs_setup():
         XRES = int(config['RESOLUTION']['xres'])
         YRES = int(config['RESOLUTION']['yres'])
         
-        ISFULLSCREEN    = bool(config['SCREEN']['fullscreen'])
+        ISFULLSCREEN    = str(config['SCREEN']['fullscreen'])
         FPS             = int(config['SCREEN']['fps'])
+
+        return [XRES, YRES, ISFULLSCREEN, FPS]
         
     except:
         print("Error with the settings file, reverting to defaults...")
@@ -49,6 +51,8 @@ def set_window_configs_to_default():
             config['SCREEN']['FPS']             = str(FPS)
             
             config.write(config_file)
+
+        return [XRES, YRES, ISFULLSCREEN, FPS]
     
     except:
         raise SystemError("'defaults.json' file not found or doesn't have the right values, please either repair the game or redownload from source.")
@@ -78,6 +82,8 @@ def game_lang_load():
                 config['LANGUAGE']['locale']        = str(LANG)
                 
                 config.write(config_file)
+
+            return LANG
              
         except:
             raise SystemError("'defaults.json' file not found or doesn't have the right values, please either repair the game or redownload from source.")

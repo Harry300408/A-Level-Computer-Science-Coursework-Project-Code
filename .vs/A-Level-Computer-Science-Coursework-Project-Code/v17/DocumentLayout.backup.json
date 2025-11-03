@@ -1,0 +1,115 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\NOQA\\procedual_generation\\heightgen.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:NOQA\\procedual_generation\\heightgen.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\run.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:run.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\NOQA\\engine.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:NOQA\\engine.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\settings.ini||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:settings.ini||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\defaults.json||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:defaults.json||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 553,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "run.py",
+              "DocumentMoniker": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\run.py",
+              "RelativeDocumentMoniker": "run.py",
+              "ToolTip": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\run.py",
+              "RelativeToolTip": "run.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAArAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-10-14T00:22:06.24Z",
+              "IsPinned": true,
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "heightgen.py",
+              "DocumentMoniker": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\NOQA\\procedual_generation\\heightgen.py",
+              "RelativeDocumentMoniker": "NOQA\\procedual_generation\\heightgen.py",
+              "ToolTip": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\NOQA\\procedual_generation\\heightgen.py",
+              "RelativeToolTip": "NOQA\\procedual_generation\\heightgen.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACoAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-10-14T21:00:01.522Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "engine.py",
+              "DocumentMoniker": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\NOQA\\engine.py",
+              "RelativeDocumentMoniker": "NOQA\\engine.py",
+              "ToolTip": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\NOQA\\engine.py",
+              "RelativeToolTip": "NOQA\\engine.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-10-14T00:25:46.305Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 115,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "settings.ini",
+              "DocumentMoniker": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\settings.ini",
+              "RelativeDocumentMoniker": "settings.ini",
+              "ToolTip": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\settings.ini",
+              "RelativeToolTip": "settings.ini",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002768|",
+              "WhenOpened": "2025-10-14T12:45:08.23Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "defaults.json",
+              "DocumentMoniker": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\defaults.json",
+              "RelativeDocumentMoniker": "defaults.json",
+              "ToolTip": "C:\\Users\\hazad\\source\\repos\\Harry300408\\A-Level-Computer-Science-Coursework-Project-Code\\defaults.json",
+              "RelativeToolTip": "defaults.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-10-14T12:09:49.529Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
