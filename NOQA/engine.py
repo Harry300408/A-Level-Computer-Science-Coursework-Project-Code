@@ -17,6 +17,11 @@ class engine():
 
         self.clock = pygame.time.Clock()
 
+        ## SPRITE GROUPS ##
+        self.onscreen = pygame.sprite.Group()
+
+
+
     def run(self):
 
         for event in pygame.event.get():
