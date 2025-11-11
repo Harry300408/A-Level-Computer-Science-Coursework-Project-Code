@@ -1,4 +1,4 @@
-import sys, os, pygame, json, configparser
+import pygame
 from NOQA.settings_handling import *
 from NOQA.engine import *
 
