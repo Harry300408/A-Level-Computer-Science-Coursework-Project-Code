@@ -46,7 +46,7 @@ class engine():
         self.visible_sprites = []
         sprites = self.world_sprites.copy()
         
-        for sprite in self.render_group:                                                                                        ## Loops through sprites in group
+        for sprite in sprites:                                                                                        ## Loops through sprites in group
             sprite_x, sprite_y = sprite.rect.topleft                                                                            ## Gets sprite position
 
             # Check if tile is within the visible area
