@@ -32,9 +32,9 @@ class engine():
         self.resources      =   pygame.sprite.Group()
         self.scenery        =   pygame.sprite.Group()
         
-        self.ai             =   pygame.sprite.Group()
-        self.friendlyAi     =   pygame.sprite.Group()
-        self.enemiesAi      =   pygame.sprite.Group()
+        self.AI             =   pygame.sprite.Group()
+        self.friendlyAI     =   pygame.sprite.Group()
+        self.enemiesAI      =   pygame.sprite.Group()
 
     def render(self):
         ## Boundries for 'visible'
@@ -44,9 +44,8 @@ class engine():
         bottom_bound    =   self.cameraY + self.YRes
         
         self.visible_sprites = []
-        sprites = self.world_sprites.copy()
         
-        for sprite in sprites:                                                                                        ## Loops through sprites in group
+        for sprite in self.world_sprites:                                                                                        ## Loops through sprites in group
             sprite_x, sprite_y = sprite.rect.topleft                                                                            ## Gets sprite position
 
             # Check if tile is within the visible area
