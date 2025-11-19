@@ -1,5 +1,7 @@
-import sys, pygame
+import sys, pygame, operator, bisect
+
 from NOQA.tiles.base_tile import *
+from NOQA.assets.base_asset import *
 
 class engine():
     def __init__(self, configs, LANG):
@@ -23,35 +25,34 @@ class engine():
         self.cameraX = 0
         self.cameraY = 0
 
-        self.world_sprites = []
+        self.player             =   pygame.sprite.Group()
+        self.floor_tiles        =   pygame.sprite.Group()
 
-        self.player         =   pygame.sprite.Group()
-        self.floor_tiles    =   pygame.sprite.Group()
-
-        self.assets         =   pygame.sprite.Group()
-        self.resources      =   pygame.sprite.Group()
-        self.scenery        =   pygame.sprite.Group()
+        self.assets             =   pygame.sprite.Group()
+        self.resources          =   pygame.sprite.Group()
+        self.scenery            =   pygame.sprite.Group()
         
-        self.AI             =   pygame.sprite.Group()
-        self.friendlyAI     =   pygame.sprite.Group()
-        self.enemiesAI      =   pygame.sprite.Group()
+        self.AI                 =   pygame.sprite.Group()
+        self.friendlyAI         =   pygame.sprite.Group()
+        self.enemiesAI          =   pygame.sprite.Group()
+
+        self.Static_Items       =   pygame.sprite.Group()
+        self.NonStatic_Items    =   pygame.sprite.Group()
+
+        Tile([self.floor_tiles, self.Static_Items], (0, 0))
+        Asset([self.assets, self.Static_Items], (0, 4,), True, "scenery", False)
+        Asset([self.assets, self.Static_Items], (0, 3), True, "scenery", False)
 
     def render(self):
-        ## Boundries for 'visible'
-        left_bound      =   self.cameraX            
-        right_bound     =   self.cameraX + self.XRes
-        top_bound       =   self.cameraY            
-        bottom_bound    =   self.cameraY + self.YRes
-        
-        self.visible_sprites = []
-        
-        for sprite in self.world_sprites:                                                                                        ## Loops through sprites in group
-            sprite_x, sprite_y = sprite.rect.topleft                                                                            ## Gets sprite position
+        world_items = self.Static_Items.copy()
+        world_items.add(self.NonStatic_Items)
+        world_items = sorted(world_items, key=operator.attrgetter("pos"))
 
-            # Check if tile is within the visible area
-            if left_bound - self.tile_size < sprite_x < right_bound and top_bound - self.tile_size < sprite_y < bottom_bound:   ## Fancy calculation to see if it's in view
-                self.visible_sprites.append((sprite.image, (sprite_x - self.cameraX, sprite_y - self.cameraY)))                              ## If it's in view it will draw to screen
-        
+        self.screen.fill((0, 0, 0))
+
+        for i in world_items:
+            self.screen.blit(i.image, (i.rect.x - self.cameraX, i.rect.y - self.cameraY))
+
 
     def run(self):
 
@@ -61,3 +62,5 @@ class engine():
 
                 pygame.quit()
                 sys.exit()
+
+        self.render()

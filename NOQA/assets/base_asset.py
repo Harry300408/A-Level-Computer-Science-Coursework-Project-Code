@@ -14,7 +14,7 @@ class Asset(pygame.sprite.Sprite):
                                             ## (will be used for sprites with multiple frames)                                                                           
         
     def set_img(self):                                                                                          
-        self.image = pygame.image.load(f"gfx/assets/{self.asset_type}.png").convert_alpha()  
+        self.image = pygame.image.load(f"gfx/assets/{self._asset_type}.png").convert_alpha()  
                 ## Sets image attribute by loading image from gfx/world_assets/ folder based on asset_type
         self.rect = self.image.get_rect(topleft=self.pos)     
                 ## Sets rect attribute based on image and position 
