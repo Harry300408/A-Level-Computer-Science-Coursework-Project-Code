@@ -1,0 +1,31 @@
+import pygame,sys
+from _base_ui_element import ui_element
+from mouse.mouse import mouse
+from buttons._base_button import Button
+
+if __name__ == "__main__":
+    pygame.init()
+    screen = pygame.display.set_mode((600, 600))
+    uielement = ui_element((200, 50), None, "UI Element")
+    cursor = mouse()
+    test_button = Button((300, 300), "gfx/ui/menus/button/button_bg.png", "gfx/ui/menus/button/button_pressed.png", "Test Button", 40, (0, 0, 25), "This is a test button being hovered")
+    test_button2 = Button((300, 200), "gfx/ui/menus/button/button_bg.png", "gfx/ui/menus/button/button_pressed.png", "Test Button", 40, (0, 0, 25), "This is a test button being hovered")
+
+    gui_elements = [uielement, test_button, test_button2]
+
+    while True:
+        screen.fill((0, 0, 0))
+
+        for event in pygame.event.get():
+
+            if event.type == pygame.QUIT:
+
+                pygame.quit()
+                sys.exit()
+
+        for i in gui_elements:
+            i.update()
+
+        cursor.update()
+
+        pygame.display.flip()

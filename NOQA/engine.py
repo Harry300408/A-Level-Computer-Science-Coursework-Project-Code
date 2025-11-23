@@ -2,6 +2,7 @@ import sys, pygame, operator, bisect
 
 from NOQA.tiles.base_tile import *
 from NOQA.assets.base_asset import *
+from NOQA.ui.mouse.mouse import *
 
 class engine():
     def __init__(self, configs, LANG):
@@ -19,6 +20,8 @@ class engine():
             pygame.display.toggle_fullscreen()
 
         self.clock = pygame.time.Clock()
+
+        self.cusror = mouse()
 
         self.tile_size = 32
 
@@ -53,8 +56,11 @@ class engine():
         for i in world_items:
             self.screen.blit(i.image, (i.rect.x - self.cameraX, i.rect.y - self.cameraY))
 
+        self.cusror.update()
+
 
     def run(self):
+        self.screen.fill((0, 0, 0))
 
         for event in pygame.event.get():
 
