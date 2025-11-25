@@ -33,6 +33,7 @@ class Button(ui_element):
         self.draw_self()
 
         self.mouse_pos = pygame.mouse.get_pos()
+        
         if self.rect.collidepoint(self.mouse_pos): 
             self.on_hover()
             self.bg = self.hover_img
