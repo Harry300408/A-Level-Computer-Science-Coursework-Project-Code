@@ -1,7 +1,7 @@
 import pygame
 
 class Tile(pygame.sprite.Sprite):                                                                              
-    def __init__(self, groups, pos, _tile_type = "default"):                                                                 
+    def __init__(self, groups: pygame.sprite.Group, pos: tuple, _tile_type: str = "default"):                                                                 
         super().__init__(groups)                                                                                
         self.pos = pos                      ## Position as (x, y) tuple                                                                            
         self._tile_type = _tile_type          ## Type of tile (string)     

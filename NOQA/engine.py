@@ -6,10 +6,10 @@ from NOQA.ui.mouse.mouse import *
 
 class engine():
     def __init__(self, configs, LANG):
-        self.XRes   =   configs[0]
-        self.YRes   =   configs[1]
-        self.FPS    =   configs[3]
-        self.dt     =   0
+        self.XRes: int      =   configs[0]
+        self.YRes: int      =   configs[1]
+        self.FPS: int       =   configs[3]
+        self.dt: float      =   0
     
         pygame.init()
 
@@ -28,22 +28,21 @@ class engine():
         self.cameraX = 0
         self.cameraY = 0
 
-        self.player             =   pygame.sprite.Group()
-        self.floor_tiles        =   pygame.sprite.Group()
+        self.player = pygame.sprite.Group()
+        self.floor_tiles = pygame.sprite.Group()
 
-        self.assets             =   pygame.sprite.Group()
-        self.resources          =   pygame.sprite.Group()
-        self.scenery            =   pygame.sprite.Group()
+        self.assets = pygame.sprite.Group()
+        self.resources = pygame.sprite.Group()
+        self.scenery = pygame.sprite.Group()
         
-        self.AI                 =   pygame.sprite.Group()
-        self.friendlyAI         =   pygame.sprite.Group()
-        self.enemiesAI          =   pygame.sprite.Group()
+        self.AI = pygame.sprite.Group()
+        self.friendlyAI = pygame.sprite.Group()
+        self.enemiesAI = pygame.sprite.Group()
+        self.Static_Items = pygame.sprite.Group()
+        self.NonStatic_Items = pygame.sprite.Group()
 
-        self.Static_Items       =   pygame.sprite.Group()
-        self.NonStatic_Items    =   pygame.sprite.Group()
-
-        Tile([self.floor_tiles, self.Static_Items], (0, 0))
-        Asset([self.assets, self.Static_Items], (0, 4,), True, "scenery", False)
+        Tile([self.floor_tiles, self.Static_Items], (0, 0)) # type: ignore
+        Asset([self.assets, self.Static_Items], (0, 4), True, "scenery", False)
         Asset([self.assets, self.Static_Items], (0, 3), True, "scenery", False)
 
     def render(self):
