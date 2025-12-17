@@ -1,4 +1,5 @@
 import pygame
+pygame.font.init() 
 font = pygame.font.Font(None,30)                                            
 
 def debug404(info: list, y = 10, x = 10):                                           
@@ -15,4 +16,4 @@ def debug404(info: list, y = 10, x = 10):
     
     debug_rect = debug_surf.get_rect(topleft = (x, y))                    
     
-    display_suface.blit(debug_surf, debug_rect)                            
+    display_suface.blit(debug_surf, debug_rect)  # type: ignore                          

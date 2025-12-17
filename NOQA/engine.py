@@ -20,6 +20,7 @@ class engine():
         pygame.init()
 
         self.screen: pygame.Surface = pygame.display.set_mode((self.XRes, self.YRes))
+        pygame.display.set_caption("ALONE")
 
         if configs[2] == "True":
             self.FULLSCREEN: bool = configs[2]
@@ -47,16 +48,14 @@ class engine():
         self.Static_Items:      pygame.sprite.Group     =   pygame.sprite.Group()
         self.NonStatic_Items:   pygame.sprite.Group     =   pygame.sprite.Group()
 
-        Tile([self.floor_tiles, self.Static_Items], (50, 0))
-        Asset([self.assets, self.Static_Items], (75, 4), True, "scenery", False)
-        Asset([self.assets, self.Static_Items], (125, 3), True, "scenery", False)
-        Liquid([self.floor_tiles, self.Static_Items], (100, 100))
+        Tile([self.floor_tiles, self.Static_Items], (250, 300))
+        Asset([self.assets, self.Static_Items], (175, 100), True, "scenery", False)
+        Asset([self.assets, self.Static_Items], (125, 75), True, "scenery", False)
+        Liquid([self.floor_tiles, self.Static_Items], (100, 200))
         
         
 
     def render(self):
-        if self.debug == True:
-            pygame.display.set_caption(f"NOQA | FPS: {int(self.clock.get_fps())} | DT: {self.dt}")
             
             
         world_items = self.Static_Items.copy()
@@ -68,9 +67,10 @@ class engine():
 
         for i in world_items:
             self.screen.blit(i.image, (i.rect.x - self.cameraX, i.rect.y - self.cameraY))
-
-        debug404([f"FPS: {int(self.clock.get_fps())}", f"DT: {self.dt}"])
-
+        
+        if self.debug == True:
+            debug404([f"FPS: {int(self.clock.get_fps())} \nDT: {self.dt}"])
+            
         self.cusror.update()
 
 
