@@ -20,7 +20,7 @@ class engine():
         pygame.init()
 
         self.screen: pygame.Surface = pygame.display.set_mode((self.XRes, self.YRes))
-        pygame.display.set_caption("ALONE: No Rescue")
+        pygame.display.set_caption("ALONE:No Rescue | vDev-Kit")
 
         if configs[2] == "True":
             self.FULLSCREEN: bool = configs[2]
@@ -51,8 +51,6 @@ class engine():
         Tile([self.floor_tiles, self.Static_Items], (250, 300))
         Asset([self.assets, self.Static_Items], (175, 100), True, "scenery", False)
         Asset([self.assets, self.Static_Items], (125, 75), True, "scenery", False)
-
-                                                              
         Liquid([self.floor_tiles, self.Static_Items], (100, 200))
         
         
@@ -74,9 +72,9 @@ class engine():
             debug404(
 
                 [f"ALONE: No Rescue | vDev-Kit 0.1 pre-Alpha", 
-                 f"FPS: {int(self.clock.get_fps())}", 
-                 f"Delta Time (Δt): {self.dt}", 
-                 f"Cursor XY: {self.cusror.location[0]} / {self.cusror.location[1]}"]
+                f"FPS: {int(self.clock.get_fps())}", 
+                f"Delta Time (Δt): {self.dt}", 
+                f"Cursor XY: {self.cusror.location[0]} / {self.cusror.location[1]}"]
                 
                 )
             
@@ -84,6 +82,7 @@ class engine():
 
 
     def run(self):
+        self.screen.fill((0, 0, 0))
 
         for event in pygame.event.get():
 
@@ -91,16 +90,5 @@ class engine():
 
                 pygame.quit()
                 sys.exit()
-
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
-
-                if event.key == pygame.K_F3:
-                    if self.debug == True:
-                        self.debug = False
-                    else:
-                        self.debug = True
 
         self.render()
