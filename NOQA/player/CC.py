@@ -5,4 +5,8 @@ class CC(pygame.sprite.Sprite): # Character Controller
         
         self.x = x
         self.y = y
-        self.location = [self.x, self.y]
+        
+        self.pos = (self.x, self.y)
+        
+    def update(self):
+        pass
