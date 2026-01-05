@@ -8,5 +8,5 @@ class CC(pygame.sprite.Sprite): # Character Controller
         
         self.pos = (self.x, self.y)
         
-    def update(self):
-        pass
+    def update(self): #TODO
+        pass 
