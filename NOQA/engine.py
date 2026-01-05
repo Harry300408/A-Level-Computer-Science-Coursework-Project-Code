@@ -4,6 +4,7 @@ from NOQA.tiles.base_tile import *
 from NOQA.tiles.liquid.base_liquid import *
 
 from NOQA.assets.base_asset import *
+from NOQA.player.CC import *
 
 from NOQA.ui.mouse.mouse import *
 from NOQA.debug404.debug import debug404
@@ -52,6 +53,8 @@ class engine():
         Asset([self.assets, self.Static_Items], (175, 100), True, "scenery", False)
         Asset([self.assets, self.Static_Items], (125, 75), True, "scenery", False)
         Liquid([self.floor_tiles, self.Static_Items], (100, 200))
+        
+        CC([self.player, self.NonStatic_Items], 0, 0)
         
         
 

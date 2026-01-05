@@ -1,5 +1,6 @@
 import pygame, sys, os
-
-class CC: # Character Controller
-    def __init__(self, x = 0, y = 0):
-        pass
+class CC(pygame.sprite.Sprite): # Character Controller
+    def __init__(self, groups, x = 0, y = 0):
+        self.x = x
+        self.y = y
+        self.location = [self.x, self.y]
