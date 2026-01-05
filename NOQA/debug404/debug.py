@@ -7,8 +7,11 @@ def debug404(info: list, y = 10, x = 10):
     for i in info:
         if display_info == "":
             display_info += str(i)
+
         else:
-            display_info += f" {str(i)}"
+            display_info += f"{str(i)}"
+        
+        display_info += "\n"
             
     display_suface = pygame.display.get_surface()                           
     
