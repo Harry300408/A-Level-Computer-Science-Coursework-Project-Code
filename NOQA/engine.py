@@ -54,7 +54,7 @@ class engine():
         Asset([self.assets, self.Static_Items], (125, 75), True, "scenery", False)
         Liquid([self.floor_tiles, self.Static_Items], (100, 200))
         
-        CC([self.player, self.NonStatic_Items], 0, 0)
+        #CC([self.player, self.NonStatic_Items], 0, 0)
         
         
 
@@ -74,10 +74,12 @@ class engine():
         if self.debug == True:
             debug404(
 
-                [f"ALONE: No Rescue | vDev-Kit 0.1 pre-Alpha", 
-                f"FPS: {int(self.clock.get_fps())}", 
-                f"Delta Time (Δt): {self.dt}", 
-                f"Cursor XY: {self.cusror.location[0]} / {self.cusror.location[1]}"]
+                [
+                    f"ALONE: No Rescue | vDev-Kit 0.1 pre-Alpha", 
+                    f"FPS: {int(self.clock.get_fps())}", 
+                    f"Delta Time (Δt): {self.dt}", 
+                    f"Cursor XY: {self.cusror.location[0]} / {self.cusror.location[1]}"
+                ]
                 
                 )
             
