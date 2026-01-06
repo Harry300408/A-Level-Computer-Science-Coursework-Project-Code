@@ -36,6 +36,7 @@ class engine():
         self.cameraX: float = 0
         self.cameraY: float = 0
 
+        self.world:        pygame.sprite.Group     =   pygame.sprite.Group()
         self.player:        pygame.sprite.Group     =   pygame.sprite.Group()
         self.floor_tiles:   pygame.sprite.Group     =   pygame.sprite.Group()
 
@@ -49,24 +50,22 @@ class engine():
         self.Static_Items:      pygame.sprite.Group     =   pygame.sprite.Group()
         self.NonStatic_Items:   pygame.sprite.Group     =   pygame.sprite.Group()
 
-        Tile([self.floor_tiles, self.Static_Items], (250, 300))
-        Asset([self.assets, self.Static_Items], (175, 100), True, "scenery", False)
-        Asset([self.assets, self.Static_Items], (125, 75), True, "scenery", False)
-        Liquid([self.floor_tiles, self.Static_Items], (100, 200))
+        Tile([self.world, self.floor_tiles, self.Static_Items], (250, 300))
+        Asset([self.world, self.assets, self.Static_Items], (175, 100), True, "scenery", False)
+        Asset([self.world, self.assets, self.Static_Items], (125, 75), True, "scenery", False)
+        Liquid([self.world, self.floor_tiles, self.Static_Items], (100, 200))
         
-        #CC([self.player, self.NonStatic_Items], 0, 0)
+        CC([self.world, self.player, self.NonStatic_Items])
         
         
 
     def render(self):
             
-            
         world_items = self.Static_Items.copy()
         world_items.add(self.NonStatic_Items)
+        world_items.add(self.player)
         
         world_items = sorted(world_items, key=operator.attrgetter("pos"))
-
-        self.screen.fill((0, 0, 0))
 
         for i in world_items:
             self.screen.blit(i.image, (i.rect.x - self.cameraX, i.rect.y - self.cameraY))
@@ -87,7 +86,7 @@ class engine():
 
 
     def run(self):
-        self.screen.fill((0, 0, 0))
+        self.screen.fill("green")
 
         for event in pygame.event.get():
 
@@ -95,5 +94,8 @@ class engine():
 
                 pygame.quit()
                 sys.exit()
+        
+        for i in self.world:
+            i.update()
 
         self.render()
