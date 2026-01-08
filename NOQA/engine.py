@@ -67,7 +67,7 @@ class engine():
         
 
         for i in renderItms:
-            self.screen.blit(i.image, (i.rect.x - self.cameraX, i.rect.y - self.cameraY))
+            self.screen.blit(i.image, (i.rect.x, i.rect.y))
         
         if self.debug == True:
             debug404(
@@ -76,7 +76,11 @@ class engine():
                     f"ALONE: No Rescue | vDev-Kit 0.1 pre-Alpha", 
                     f"FPS: {int(self.clock.get_fps())}", 
                     f"Delta Time (Δt): {self.dt}", 
-                    f"Cursor XY: {self.cusror.location[0]} / {self.cusror.location[1]}"
+                    f"Cursor XY: {self.cusror.location[0]} / {self.cusror.location[1]}",
+                    f"Player State: {self.player.sprites()[0].state}", 
+                    f"Player Direction: {self.player.sprites()[0].direction}", 
+                    f"Player Attack Cooldown: {round(self.player.sprites()[0].attack_cooldown, 2)}",
+                    
                 ]
                 
                 )
