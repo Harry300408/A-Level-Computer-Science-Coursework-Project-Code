@@ -95,5 +95,7 @@ class mouse():
         self.location = pygame.mouse.get_pos()
         self.throbcooldown()
         self.update_img()
+    
+    def draw(self):
         self.imagerect = self.image.get_rect(center=self.location)
         self.screen.blit(self.image, self.imagerect)

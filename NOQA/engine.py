@@ -37,6 +37,8 @@ class engine():
         self.cameraY: float = 0
 
         self.world:        pygame.sprite.Group     =   pygame.sprite.Group()
+        self.render_items: pygame.sprite.Group     =   pygame.sprite.Group()
+        
         self.player:        pygame.sprite.Group     =   pygame.sprite.Group()
         self.floor_tiles:   pygame.sprite.Group     =   pygame.sprite.Group()
 
@@ -50,24 +52,21 @@ class engine():
         self.Static_Items:      pygame.sprite.Group     =   pygame.sprite.Group()
         self.NonStatic_Items:   pygame.sprite.Group     =   pygame.sprite.Group()
 
-        Tile([self.world, self.floor_tiles, self.Static_Items], (250, 300))
-        Asset([self.world, self.assets, self.Static_Items], (175, 100), True, "scenery", False)
-        Asset([self.world, self.assets, self.Static_Items], (125, 75), True, "scenery", False)
-        Liquid([self.world, self.floor_tiles, self.Static_Items], (100, 200))
+        Tile([self.world, self.floor_tiles, self.Static_Items, self.render_items], (250, 300))
+        Asset([self.world, self.assets, self.Static_Items, self.render_items], (175, 100), True, "scenery", False)
+        Asset([self.world, self.assets, self.Static_Items, self.render_items], (125, 75), True, "scenery", False)
+        Liquid([self.world, self.floor_tiles, self.Static_Items, self.render_items], (100, 200))
         
-        CC([self.world, self.player, self.NonStatic_Items])
+        CC([self.player, self.render_items])
         
         
 
     def render(self):
-            
-        world_items = self.Static_Items.copy()
-        world_items.add(self.NonStatic_Items)
-        world_items.add(self.player)
         
-        world_items = sorted(world_items, key=operator.attrgetter("pos"))
+        renderItms = sorted(self.render_items, key=operator.attrgetter("pos"))
+        
 
-        for i in world_items:
+        for i in renderItms:
             self.screen.blit(i.image, (i.rect.x - self.cameraX, i.rect.y - self.cameraY))
         
         if self.debug == True:
@@ -81,9 +80,35 @@ class engine():
                 ]
                 
                 )
+        
+        self.cusror.draw()
             
+        
+    def game_updates(self):
         self.cusror.update()
-
+        
+        keys = pygame.key.get_pressed()
+        
+        if keys[pygame.K_w]:
+            for i in self.world:
+                i.rect.y += 5
+            
+        elif keys[pygame.K_s]:
+            for i in self.world:
+                i.rect.y -= 5
+            
+        elif keys[pygame.K_a]:
+            for i in self.world:
+                i.rect.x += 5
+            
+        elif keys[pygame.K_d]:
+            for i in self.world:
+                i.rect.x -= 5
+        
+        self.player.update()
+        
+        for i in self.world:
+            i.update()
 
     def run(self):
         self.screen.fill("green")
@@ -95,7 +120,6 @@ class engine():
                 pygame.quit()
                 sys.exit()
         
-        for i in self.world:
-            i.update()
+        self.game_updates()
 
         self.render()
