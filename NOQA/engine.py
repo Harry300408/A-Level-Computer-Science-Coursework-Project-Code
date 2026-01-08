@@ -17,6 +17,8 @@ class engine():
         self.dt:  float     =   0
         
         self.debug: bool    =   True
+        self.show_hitboxes: bool = False
+        self.f_cooldown: float = 0
     
         pygame.init()
 
@@ -52,22 +54,24 @@ class engine():
         self.Static_Items:      pygame.sprite.Group     =   pygame.sprite.Group()
         self.NonStatic_Items:   pygame.sprite.Group     =   pygame.sprite.Group()
 
-        Tile([self.world, self.floor_tiles, self.Static_Items, self.render_items], (250, 300))
+        Tile([self.world, self.floor_tiles, self.Static_Items], (250, 300))
         Asset([self.world, self.assets, self.Static_Items, self.render_items], (175, 100), True, "scenery", False)
         Asset([self.world, self.assets, self.Static_Items, self.render_items], (125, 75), True, "scenery", False)
-        Liquid([self.world, self.floor_tiles, self.Static_Items, self.render_items], (100, 200))
+        Liquid([self.world, self.floor_tiles, self.Static_Items], (100, 200))
         
         CC([self.player, self.render_items])
         
         
 
     def render(self):
-        
-        renderItms = sorted(self.render_items, key=operator.attrgetter("pos"))
-        
-
-        for i in renderItms:
+        self.render_items = sorted(self.render_items, key=operator.attrgetter("hitbox.bottom"))
+   
+        for i in self.floor_tiles:
             self.screen.blit(i.image, (i.rect.x, i.rect.y))
+
+        for i in self.render_items:
+            self.screen.blit(i.image, (i.rect.x, i.rect.y))
+        
         
         if self.debug == True:
             debug404(
@@ -80,10 +84,18 @@ class engine():
                     f"Player State: {self.player.sprites()[0].state}", 
                     f"Player Direction: {self.player.sprites()[0].direction}", 
                     f"Player Attack Cooldown: {round(self.player.sprites()[0].attack_cooldown, 2)}",
-                    
+                    f"Func Cooldown: {self.f_cooldown}",
+                    f"Show Hitboxes: {self.show_hitboxes}"
                 ]
                 
                 )
+        
+        if self.show_hitboxes == True:
+            for i in self.render_items:
+                try:
+                    pygame.draw.rect(self.screen, (255, 0, 0), i.hitbox, 1)
+                except:
+                    pass
         
         self.cusror.draw()
             
@@ -91,8 +103,34 @@ class engine():
     def game_updates(self):
         self.cusror.update()
         
+        self.f_cooldown -= 0.05
+        if self.f_cooldown < 0:
+            self.f_cooldown = 0
+        
         keys = pygame.key.get_pressed()
         
+        ## DEBUG KEYS ##
+        if keys[pygame.K_F1] and self.f_cooldown <= 0:
+            self.debug = not self.debug
+            self.f_cooldown = 1
+        
+        if keys[pygame.K_F2] and self.f_cooldown <= 0:
+            self.show_hitboxes = not self.show_hitboxes
+            self.f_cooldown = 1
+        
+        if keys[pygame.K_F3] and self.f_cooldown <= 0:
+            count = 0
+            
+            for path in os.listdir("screenshots/"):
+                if os.path.isfile(os.path.join("screenshots/", path)):
+                    count += 1
+                    
+            pygame.image.save(self.screen, f"screenshots/screenshot{count}.png")
+            self.f_cooldown = 1
+        
+        
+        
+        ## NON DEBUG KEYS ##
         if keys[pygame.K_w]:
             for i in self.world:
                 i.rect.y += 5
@@ -123,7 +161,7 @@ class engine():
 
                 pygame.quit()
                 sys.exit()
-        
-        self.game_updates()
 
         self.render()
+        
+        self.game_updates()

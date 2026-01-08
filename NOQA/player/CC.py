@@ -9,20 +9,27 @@ class CC(pygame.sprite.Sprite): # Character Controller
         self.y = pygame.display.get_surface().get_height() / 2
         self.pos = (self.x, self.y)
         
+        self._ID = "CharacterController"
+        
         
         self.state = "idle"
         self.direction = "down"
         self.attack_cooldown = 0
         self.frame = 0
         self.image = pygame.image.load(f"gfx/player/{self.direction}/{self.state}/{self.state}{self.frame}.png").convert_alpha()
-        self.rect = self.image.get_rect(bottomright = (self.screen.get_width() / 2, self.screen.get_height() / 2))
+        self.rect = self.image.get_rect(center = (self.screen.get_width() / 2, self.screen.get_height() / 2))
+        self.rect = self.rect.scale_by(-2)
+        self.rect = self.rect.inflate(0, -40)
         
-        #
+        self.hitbox = self.image.get_rect(center = (self.screen.get_width() / 2, self.screen.get_height() / 2))
+        self.hitbox = self.hitbox.scale_by(0.5)
+        self.hitbox = self.hitbox.inflate(0, 10)
+        self.hitbox = self.hitbox.move(0, 25)
+        
     
     def updateimg(self):
         self.image = pygame.image.load(f"gfx/player/{self.direction}/{self.state}/{self.state}{int(self.frame)}.png").convert_alpha()
-        self.image = pygame.transform.scale(self.image, (self.rect.width * 2, self.rect.height * 2)) 
-        
+        self.image = pygame.transform.scale_by(self.image, 2)
         
     def update(self): #TODO
         
@@ -83,3 +90,5 @@ class CC(pygame.sprite.Sprite): # Character Controller
         if self.state == "death":
             if self.frame > 7:
                 self.frame = 7
+        
+        

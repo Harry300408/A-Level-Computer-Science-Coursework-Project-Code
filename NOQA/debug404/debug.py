@@ -1,6 +1,6 @@
 import pygame
 pygame.font.init() 
-font = pygame.font.Font(None,30)                                            
+font = pygame.font.Font(None,22)                                            
 
 def debug404(info: list, y = 10, x = 10):                                           
     display_info = ""
