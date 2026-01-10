@@ -11,4 +11,4 @@ if __name__ == "__main__":
         game_engine.run()
         pygame.display.flip()
 
-        game_engine.dt = game_engine.clock.tick() / 1000 #game_engine.FPS
+        game_engine.dt = game_engine.clock.tick(game_engine.FPS) / 1000 

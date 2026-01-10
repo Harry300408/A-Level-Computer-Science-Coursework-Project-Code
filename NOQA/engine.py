@@ -79,7 +79,6 @@ class engine():
                 [
                     f"ALONE: No Rescue | vDev-Kit 0.1 pre-Alpha", 
                     f"FPS: {int(self.clock.get_fps())}", 
-                    f"Delta Time (Δt): {self.dt}", 
                     f"Cursor XY: {self.cusror.location[0]} / {self.cusror.location[1]}",
                     f"Player State: {self.player.sprites()[0].state}", 
                     f"Player Direction: {self.player.sprites()[0].direction}", 

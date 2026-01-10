@@ -31,7 +31,7 @@ class CC(pygame.sprite.Sprite): # Character Controller
         self.image = pygame.image.load(f"gfx/player/{self.direction}/{self.state}/{self.state}{int(self.frame)}.png").convert_alpha()
         self.image = pygame.transform.scale_by(self.image, 2)
         
-    def update(self): #TODO
+    def update(self): 
         
         
         self.updateimg()
