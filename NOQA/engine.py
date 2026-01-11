@@ -93,6 +93,7 @@ class engine():
             for i in self.render_items:
                 try:
                     pygame.draw.rect(self.screen, (255, 0, 0), i.hitbox, 1)
+                    pygame.draw.rect(self.screen, (0, 0, 255), i.attack_box, 1)
                 except:
                     pass
         
@@ -130,25 +131,45 @@ class engine():
         
         
         ## NON DEBUG KEYS ##
-        if keys[pygame.K_w]:
-            for i in self.world:
-                i.rect.y += 5
-            
-        elif keys[pygame.K_s]:
-            for i in self.world:
-                i.rect.y -= 5
-            
-        elif keys[pygame.K_a]:
-            for i in self.world:
-                i.rect.x += 5
-            
-        elif keys[pygame.K_d]:
-            for i in self.world:
-                i.rect.x -= 5
+        if not self.player.sprites()[0].state in ["hit", "death"] and \
+            not self.player.sprites()[0].attack_cooldown > 0:
+                
+            if keys[pygame.K_w]:
+                for i in self.world:
+                    i.rect.y += 5
+                
+            elif keys[pygame.K_s]:
+                for i in self.world:
+                    i.rect.y -= 5
+                
+            elif keys[pygame.K_a]:
+                for i in self.world:
+                    i.rect.x += 5
+                
+            elif keys[pygame.K_d]:
+                for i in self.world:
+                    i.rect.x -= 5
         
         self.player.update()
         
         for i in self.world:
+            try:
+                if i.hitbox.colliderect(self.player.sprites()[0].hitbox) and i._isSolid == True:
+                    if self.player.sprites()[0].direction == "up":
+                        for j in self.world:
+                            j.rect.y -= 5
+                    elif self.player.sprites()[0].direction == "down":
+                        for j in self.world:
+                            j.rect.y += 5
+                    elif self.player.sprites()[0].direction == "left":
+                        for j in self.world:
+                            j.rect.x -= 5
+                    elif self.player.sprites()[0].direction == "right":
+                        for j in self.world:
+                            j.rect.x += 5
+            except:
+                pass
+            
             i.update()
 
     def run(self):
