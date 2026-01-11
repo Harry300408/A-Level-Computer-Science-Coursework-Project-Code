@@ -67,6 +67,19 @@ class CC(pygame.sprite.Sprite): # Character Controller
                 self.frame = -0.2
                 self.attack_cooldown = 1
                 
+                mouse_pos = pygame.mouse.get_pos()
+                if mouse_pos[1] < self.screen.get_height() / 3:
+                    self.direction = "up"
+                
+                elif mouse_pos[1] > self.screen.get_height() / 3:
+                    self.direction = "down"
+                    
+                elif mouse_pos[0] < self.screen.get_width() / 2:
+                    self.direction = "left"
+                
+                elif mouse_pos[0] > self.screen.get_width() / 2:
+                    self.direction = "right"
+                
         
         self.frame += 0.2
         
