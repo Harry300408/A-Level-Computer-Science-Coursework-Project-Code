@@ -8,7 +8,11 @@ if __name__ == "__main__":
     game_engine = engine(window_configs, LANG)
 
     while True:
-        game_engine.run()
+        if game_engine.menu_state == "main_menu":
+            game_engine.main_menu()
+        elif game_engine.menu_state == "game":
+            game_engine.run()
+        
         pygame.display.flip()
 
         game_engine.dt = game_engine.clock.tick(game_engine.FPS) / 1000 

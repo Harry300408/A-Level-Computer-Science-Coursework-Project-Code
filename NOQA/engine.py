@@ -4,9 +4,14 @@ from NOQA.tiles.base_tile import *
 from NOQA.tiles.liquid.base_liquid import *
 
 from NOQA.assets.base_asset import *
+from NOQA.assets.trees.L_Tree import *
+
 from NOQA.player.CC import *
 
 from NOQA.ui.mouse.mouse import *
+from NOQA.ui.buttons._base_button import *
+from NOQA.ui.switch._base_switch import *
+from NOQA.ui.slider._base_slider import *
 from NOQA.debug404.debug import debug404
 
 class engine():
@@ -16,9 +21,9 @@ class engine():
         self.FPS:   int     =   configs[3]
         self.dt:  float     =   0
         
-        self.debug: bool    =   True
-        self.show_hitboxes: bool = False
-        self.f_cooldown: float = 0
+        self.debug:         bool    =   True
+        self.show_hitboxes: bool    =   True
+        self.f_cooldown:    float   =   0
     
         pygame.init()
 
@@ -38,31 +43,83 @@ class engine():
         self.cameraX: float = 0
         self.cameraY: float = 0
 
-        self.world:        pygame.sprite.Group     =   pygame.sprite.Group()
-        self.render_items: pygame.sprite.Group     =   pygame.sprite.Group()
+        self.world:             pygame.sprite.Group     =   pygame.sprite.Group()
+        self.render_items:      pygame.sprite.Group     =   pygame.sprite.Group()
         
-        self.player:        pygame.sprite.Group     =   pygame.sprite.Group()
-        self.floor_tiles:   pygame.sprite.Group     =   pygame.sprite.Group()
+        self.player:            pygame.sprite.Group     =   pygame.sprite.Group()
+        self.floor_tiles:       pygame.sprite.Group     =   pygame.sprite.Group()
 
-        self.assets:    pygame.sprite.Group     =   pygame.sprite.Group()
-        self.resources: pygame.sprite.Group     =   pygame.sprite.Group()
-        self.scenery:   pygame.sprite.Group     =   pygame.sprite.Group()
+        self.assets:            pygame.sprite.Group     =   pygame.sprite.Group()
+        self.resources:         pygame.sprite.Group     =   pygame.sprite.Group()
+        self.scenery:           pygame.sprite.Group     =   pygame.sprite.Group()
         
         self.AI:                pygame.sprite.Group     =   pygame.sprite.Group()
         self.friendlyAI:        pygame.sprite.Group     =   pygame.sprite.Group()
         self.enemiesAI:         pygame.sprite.Group     =   pygame.sprite.Group()
         self.Static_Items:      pygame.sprite.Group     =   pygame.sprite.Group()
         self.NonStatic_Items:   pygame.sprite.Group     =   pygame.sprite.Group()
-
+        
+        ## MENU STATE ##
+        self.menu_state = "game"
+        
+        ## MENU BGs  ##
+        self.Bgs = []
+        directory = 'gfx/menubgs/'
+        for filename in os.listdir(directory):
+            if filename.endswith('.png'):
+                self.Bgs.append(pygame.image.load(os.path.join(directory, filename)).convert_alpha())
+        
+        ## MENU ITEMS ##
+        self.play_button = Button((self.XRes / 2, self.YRes / 2), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "MENU_PLAY", 32, (255, 255, 255), (255, 255, 0), "HINT_PLAY_BUTTON")
+        
+        self.mm_buttons = [self.play_button]
+        
+        self.mm_gui_elements = [self.play_button]
+        
+        count = 0
+        for i in self.Bgs:
+            i = pygame.transform.scale(i, (self.XRes, self.YRes))
+            self.Bgs[ count ] = i
+            count += 1
+        
+        self.bgrect = self.Bgs[0].get_rect(topleft = (0, 0))
+        self.slide_num = 0
+        
         Tile([self.world, self.floor_tiles, self.Static_Items], (250, 300))
         Asset([self.world, self.assets, self.Static_Items, self.render_items], (175, 100), True, "scenery", False)
         Asset([self.world, self.assets, self.Static_Items, self.render_items], (125, 75), True, "scenery", False)
         Liquid([self.world, self.floor_tiles, self.Static_Items], (100, 200))
         
+        LTree([self.world, self.assets, self.Static_Items, self.render_items], (300, 300))
+        
         CC([self.player, self.render_items])
         
+    def main_menu(self):
+        self.slide_num += 0.001
+        self.screen.blit(self.Bgs[int(self.slide_num) % len(self.Bgs)], self.bgrect)
         
+        self.play_button.update()
+        
+        for event in pygame.event.get():
 
+            if event.type == pygame.QUIT:
+
+                pygame.quit()
+                sys.exit()
+        
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for i in self.mm_buttons:
+                    if i.check_for_update():
+                        pass
+
+
+
+        for i in self.mm_gui_elements:
+            i.update()
+        
+        self.cusror.update()
+        self.cusror.draw()
+    
     def render(self):
         self.render_items = sorted(self.render_items, key=operator.attrgetter("hitbox.bottom"))
    
@@ -82,6 +139,7 @@ class engine():
                     f"Cursor XY: {self.cusror.location[0]} / {self.cusror.location[1]}",
                     f"Player State: {self.player.sprites()[0].state}", 
                     f"Player Direction: {self.player.sprites()[0].direction}", 
+                    f"Player Held Item: {self.player.sprites()[0].held_item}",
                     f"Player Attack Cooldown: {round(self.player.sprites()[0].attack_cooldown, 2)}",
                     f"Func Cooldown: {self.f_cooldown}",
                     f"Show Hitboxes: {self.show_hitboxes}"
@@ -150,11 +208,10 @@ class engine():
                 for i in self.world:
                     i.rect.x -= 5
         
-        self.player.update()
-        
         for i in self.world:
             try:
                 if i.hitbox.colliderect(self.player.sprites()[0].hitbox) and i._isSolid == True:
+                    
                     if self.player.sprites()[0].direction == "up":
                         for j in self.world:
                             j.rect.y -= 5
@@ -171,6 +228,8 @@ class engine():
                 pass
             
             i.update()
+        
+        self.player.update()
 
     def run(self):
         self.screen.fill("green")
@@ -181,7 +240,5 @@ class engine():
 
                 pygame.quit()
                 sys.exit()
-
-        self.render()
-        
         self.game_updates()
+        self.render()

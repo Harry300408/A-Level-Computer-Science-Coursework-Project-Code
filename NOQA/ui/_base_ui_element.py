@@ -1,5 +1,5 @@
 import pygame, sys
-from mouse.mouse import mouse
+from NOQA.ui.mouse.mouse import mouse
 
 class ui_element():
     def __init__(self, pos, img, hint_text = "MISSING_HINT_TEXT"):

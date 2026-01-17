@@ -15,7 +15,11 @@ class Asset(pygame.sprite.Sprite):
         self.set_img()                      ## References set_img method to load image and set rect 
                                             ## (will be used for sprites with multiple frames)                                                                           
         
-        self.hitbox = self.rect
+        if self._isSolid == True:
+            self.hitbox = self.rect
+        
+        if self._interacterble == True:
+            self.interact_box = self.rect.inflate(20, 20)   ## Interaction box slightly larger than rect for easier interaction
         
     def set_img(self):                                                                                          
         self.image = pygame.image.load(f"gfx/assets/{self._asset_type}.png").convert_alpha()  
@@ -24,7 +28,3 @@ class Asset(pygame.sprite.Sprite):
                 ## Sets rect attribute based on image and position 
                 ## (mainly used for rendereing)
             
-    
-    def update(self):   ## Update method (Empty on default, wont be on certain types)                                                                                
-       self.x = self.pos[0]
-       self.y = self.pos[1]

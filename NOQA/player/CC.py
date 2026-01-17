@@ -11,6 +11,7 @@ class CC(pygame.sprite.Sprite): # Character Controller
         
         self._ID = "CharacterController"
         
+        self.held_item = "sword"
         
         self.state = "idle"
         self.direction = "down"
@@ -23,7 +24,7 @@ class CC(pygame.sprite.Sprite): # Character Controller
         
         self.hitbox = self.image.get_rect(center = (self.screen.get_width() / 2, self.screen.get_height() / 2))
         self.hitbox = self.hitbox.scale_by(0.5)
-        self.hitbox = self.hitbox.inflate(0, 10)
+        self.hitbox = self.hitbox.inflate(-10, 10)
         self.hitbox = self.hitbox.move(0, 25)
         
     
@@ -46,6 +47,13 @@ class CC(pygame.sprite.Sprite): # Character Controller
             self.direction = "left"
         elif keys[pygame.K_d]:
             self.direction = "right"
+        
+        if keys[pygame.K_1]:
+            self.held_item = "sword"
+        if keys[pygame.K_2]:
+            self.held_item = "axe"
+        if keys[pygame.K_3]:
+            self.held_item = "pickaxe"
         
         self.attack_cooldown -= 0.05
         if self.attack_cooldown < 0:

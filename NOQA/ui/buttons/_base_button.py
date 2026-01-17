@@ -1,5 +1,5 @@
 import pygame, sys
-from _base_ui_element import ui_element
+from NOQA.ui._base_ui_element import ui_element
 
 
 class Button(ui_element):
