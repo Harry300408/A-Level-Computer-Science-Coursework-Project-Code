@@ -192,19 +192,19 @@ class engine():
         if not self.player.sprites()[0].state in ["hit", "death"] and \
             not self.player.sprites()[0].attack_cooldown > 0:
                 
-            if keys[pygame.K_w]:
+            if keys[pygame.K_w] or keys[pygame.K_UP]:
                 for i in self.world:
                     i.rect.y += 5
                 
-            elif keys[pygame.K_s]:
+            elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
                 for i in self.world:
                     i.rect.y -= 5
                 
-            elif keys[pygame.K_a]:
+            elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
                 for i in self.world:
                     i.rect.x += 5
                 
-            elif keys[pygame.K_d]:
+            elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
                 for i in self.world:
                     i.rect.x -= 5
         

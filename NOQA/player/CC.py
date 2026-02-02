@@ -39,13 +39,13 @@ class CC(pygame.sprite.Sprite): # Character Controller
         
         keys = pygame.key.get_pressed()
         
-        if keys[pygame.K_w]:
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
             self.direction = "up"
-        elif keys[pygame.K_s]:
+        elif keys[pygame.K_s] or keys[pygame.K_DOWN]:
             self.direction = "down"
-        elif keys[pygame.K_a]:
+        elif keys[pygame.K_a] or keys[pygame.K_LEFT]:
             self.direction = "left"
-        elif keys[pygame.K_d]:
+        elif keys[pygame.K_d] or keys[pygame.K_RIGHT]:
             self.direction = "right"
         
         if keys[pygame.K_1]:
@@ -61,7 +61,8 @@ class CC(pygame.sprite.Sprite): # Character Controller
             self.state = "idle"
         
         if self.attack_cooldown == 0:
-            if keys[pygame.K_w] or keys[pygame.K_s] or keys[pygame.K_a] or keys[pygame.K_d]:
+            if keys[pygame.K_w] or keys[pygame.K_s] or keys[pygame.K_a] or keys[pygame.K_d] or \
+               keys[pygame.K_UP] or keys[pygame.K_DOWN] or keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]:
                 self.state = "walk"
                 
             else:
