@@ -3,13 +3,15 @@ from NOQA.ui._base_ui_element import ui_element
 
 
 class Button(ui_element):
-    def __init__(self, pos, img, hover_img, button_txt, fontsize, font_colour, hover_colour, hint_text = "MISSING_HINT_TEXT"):
+    def __init__(self, pos, img, hover_img, button_txt, fontsize, font_colour, hover_colour, btype, hint_text = "MISSING_HINT_TEXT"):
         super().__init__(pos, img, hint_text)
 
         if hover_img == None:                   self.hover_img = pygame.image.load('gfx/ui/defaults/ui_element.png').convert_alpha()
         else:                                   self.hover_img = pygame.image.load(hover_img).convert_alpha()
 
         self.bg = self.img
+
+        self.type = btype
 
         self.fontsize               = fontsize
         self.font_colour            = font_colour

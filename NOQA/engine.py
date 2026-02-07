@@ -30,6 +30,7 @@ class engine():
 
         self.screen: pygame.Surface = pygame.display.set_mode((self.XRes, self.YRes))
         pygame.display.set_caption("ALONE: No Rescue | vDev-Kit")
+        pygame.display.set_icon(pygame.image.load("gfx/icon/icon.png"))
 
         if configs[2] == "True":
             self.FULLSCREEN: bool = configs[2]
@@ -81,12 +82,13 @@ class engine():
         self.title_txt_outline             = self.title_text_font_outline.render("ALONE: No Rescue", True, "black")
         self.title_txt_rect_outline        = self.title_txt_outline.get_rect(center=((self.XRes / 2) + 5, 50))
 
-        self.play_button = Button((self.XRes / 2, (self.YRes / 2) - 120), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Play Game", 32, (255, 255, 255), (255, 255, 0), "Chose whether to start a new game or load a previous save.")
-        self.settings_button = Button((self.XRes / 2, (self.YRes / 2) - 60), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Settings", 32, (255, 255, 255), (255, 255, 0), "Change game settings")
-
-        self.mm_buttons = [self.settings_button, self.play_button]
+        self.play_button = Button((self.XRes / 2, (self.YRes / 2) - 70), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Play Game", 32, (255, 255, 255), (255, 255, 0), "play_button", "Chose whether to start a new game or load a previous save.")
         
-        self.mm_gui_elements = [self.settings_button, self.play_button]
+        self.settings_button = Button((self.XRes / 2, (self.YRes / 2)), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Settings", 32, (255, 255, 255), (255, 255, 0), "settings_button", "Change game settings")
+
+        self.exit_button = Button((self.XRes / 2, (self.YRes / 2) + 70), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Exit Game", 32, (255, 255, 255), (255, 255, 0), "exit_button", "Exit the game")
+
+        self.mm_buttons = [self.exit_button, self.settings_button, self.play_button]
         
         count = 0
         for i in self.Bgs:
@@ -112,9 +114,6 @@ class engine():
         self.screen.blit(self.title_txt_outline, self.title_txt_rect_outline)
         self.screen.blit(self.title_txt, self.title_txt_rect)
         
-        
-        self.play_button.update()
-        
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
@@ -125,15 +124,19 @@ class engine():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for i in self.mm_buttons:
                     if i.check_for_update():
-                        pass
+                        if i.type == "exit_button":
+                             pygame.quit()
+                             sys.exit()
 
+                        if i.type == "play_button":
+                            self.menu_state = "new_or_load"
 
-
-        for i in self.mm_gui_elements:
+        for i in self.mm_buttons:
             i.update()
         
         self.cusror.update()
         self.cusror.draw()
+
     
     def render(self):
         self.render_items = sorted(self.render_items, key=operator.attrgetter("hitbox.bottom"))
@@ -252,8 +255,8 @@ class engine():
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
-
                 pygame.quit()
                 sys.exit()
+
         self.game_updates()
         self.render()
