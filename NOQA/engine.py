@@ -1,4 +1,5 @@
-﻿import sys, pygame, operator, bisect
+﻿from re import S
+import sys, pygame, operator, bisect
 
 from NOQA.tiles.base_tile import *
 from NOQA.tiles.liquid.base_liquid import *
@@ -28,7 +29,7 @@ class engine():
         pygame.init()
 
         self.screen: pygame.Surface = pygame.display.set_mode((self.XRes, self.YRes))
-        pygame.display.set_caption("ALONE:No Rescue | vDev-Kit")
+        pygame.display.set_caption("ALONE: No Rescue | vDev-Kit")
 
         if configs[2] == "True":
             self.FULLSCREEN: bool = configs[2]
@@ -59,8 +60,8 @@ class engine():
         self.Static_Items:      pygame.sprite.Group     =   pygame.sprite.Group()
         self.NonStatic_Items:   pygame.sprite.Group     =   pygame.sprite.Group()
         
-        ## MENU STATE ##
-        self.menu_state = "game"
+        ## GAME STATE ##
+        self.menu_state = "main_menu"
         
         ## MENU BGs  ##
         self.Bgs = []
@@ -68,13 +69,24 @@ class engine():
         for filename in os.listdir(directory):
             if filename.endswith('.png'):
                 self.Bgs.append(pygame.image.load(os.path.join(directory, filename)).convert_alpha())
-        
+
         ## MENU ITEMS ##
-        self.play_button = Button((self.XRes / 2, self.YRes / 2), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "MENU_PLAY", 32, (255, 255, 255), (255, 255, 0), "HINT_PLAY_BUTTON")
+
+        ## TITLE TEXT ##
+        self.title_text_font       = pygame.font.Font("gfx/fonts/ui/alagard.ttf", 70)
+        self.title_txt             = self.title_text_font.render("ALONE: No Rescue", True, "white")
+        self.title_txt_rect        = self.title_txt.get_rect(center=(self.XRes / 2, 50))
+
+        self.title_text_font_outline       = pygame.font.Font("gfx/fonts/ui/alagard.ttf", 70)
+        self.title_txt_outline             = self.title_text_font_outline.render("ALONE: No Rescue", True, "black")
+        self.title_txt_rect_outline        = self.title_txt_outline.get_rect(center=((self.XRes / 2) + 5, 50))
+
+        self.play_button = Button((self.XRes / 2, (self.YRes / 2) - 120), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Play Game", 32, (255, 255, 255), (255, 255, 0), "Chose whether to start a new game or load a previous save.")
+        self.settings_button = Button((self.XRes / 2, (self.YRes / 2) - 60), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Settings", 32, (255, 255, 255), (255, 255, 0), "Change game settings")
+
+        self.mm_buttons = [self.settings_button, self.play_button]
         
-        self.mm_buttons = [self.play_button]
-        
-        self.mm_gui_elements = [self.play_button]
+        self.mm_gui_elements = [self.settings_button, self.play_button]
         
         count = 0
         for i in self.Bgs:
@@ -83,7 +95,7 @@ class engine():
             count += 1
         
         self.bgrect = self.Bgs[0].get_rect(topleft = (0, 0))
-        self.slide_num = 0
+        self.slide_num = random.randint(0, len(self.Bgs) - 1)
         
         Tile([self.world, self.floor_tiles, self.Static_Items], (250, 300))
         Asset([self.world, self.assets, self.Static_Items, self.render_items], (175, 100), True, "scenery", False)
@@ -97,6 +109,9 @@ class engine():
     def main_menu(self):
         self.slide_num += 0.001
         self.screen.blit(self.Bgs[int(self.slide_num) % len(self.Bgs)], self.bgrect)
+        self.screen.blit(self.title_txt_outline, self.title_txt_rect_outline)
+        self.screen.blit(self.title_txt, self.title_txt_rect)
+        
         
         self.play_button.update()
         
