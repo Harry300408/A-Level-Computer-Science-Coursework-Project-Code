@@ -129,7 +129,7 @@ class engine():
                              sys.exit()
 
                         if i.type == "play_button":
-                            self.menu_state = "new_or_load"
+                            pass
 
         for i in self.mm_buttons:
             i.update()
@@ -137,7 +137,12 @@ class engine():
         self.cusror.update()
         self.cusror.draw()
 
-    
+    def new_game_menu(self):
+        pass
+
+    def load_game_menu(self):
+        pass
+
     def render(self):
         self.render_items = sorted(self.render_items, key=operator.attrgetter("hitbox.bottom"))
    
