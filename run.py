@@ -12,6 +12,8 @@ if __name__ == "__main__":
             game_engine.main_menu()
         elif game_engine.menu_state == "game":
             game_engine.run()
+        elif game_engine.menu_state == "settings_menu":
+            game_engine.settings_menu()
         
         pygame.display.flip()
 

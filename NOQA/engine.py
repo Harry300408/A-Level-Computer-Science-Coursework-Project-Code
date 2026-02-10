@@ -84,11 +84,16 @@ class engine():
 
         self.play_button = Button((self.XRes / 2, (self.YRes / 2) - 70), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Play Game", 32, (255, 255, 255), (255, 255, 0), "play_button", "Chose whether to start a new game or load a previous save.")
         
+        self.newgame_button     =   Button(((self.XRes / 2) - 130, (self.YRes / 2) - 70), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "New Game", 32, (255, 255, 255), (255, 255, 0), "newgame_button", "Start a new game.")
+        self.loadgame_button    =   Button(((self.XRes / 2) + 130, (self.YRes / 2) - 70), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Load Game", 32, (255, 255, 255), (255, 255, 0), "loadgame_button", "Load a save game.")
+        self.new_load           =   False
+        
         self.settings_button = Button((self.XRes / 2, (self.YRes / 2)), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Settings", 32, (255, 255, 255), (255, 255, 0), "settings_button", "Change game settings")
 
         self.exit_button = Button((self.XRes / 2, (self.YRes / 2) + 70), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Exit Game", 32, (255, 255, 255), (255, 255, 0), "exit_button", "Exit the game")
 
         self.mm_buttons = [self.exit_button, self.settings_button, self.play_button]
+        self.new_load_buttons = [self.loadgame_button, self.newgame_button]
         
         count = 0
         for i in self.Bgs:
@@ -129,10 +134,18 @@ class engine():
                              sys.exit()
 
                         if i.type == "play_button":
-                            pass
+                            self.new_load = True
+                            self.mm_buttons.pop(2)
+                        
+                        if i.type == "settings_button":
+                            self.menu_state = "settings_menu"
 
         for i in self.mm_buttons:
             i.update()
+            
+        if self.new_load == True:
+            for i in self.new_load_buttons:
+                i.update()
         
         self.cusror.update()
         self.cusror.draw()
@@ -142,6 +155,23 @@ class engine():
 
     def load_game_menu(self):
         pass
+    
+    def settings_menu(self):
+        self.slide_num += 0.001
+        self.screen.blit(self.Bgs[int(self.slide_num) % len(self.Bgs)], self.bgrect)
+        self.screen.blit(self.title_txt_outline, self.title_txt_rect_outline)
+        self.screen.blit(self.title_txt, self.title_txt_rect)
+        
+        for event in pygame.event.get():
+
+            if event.type == pygame.QUIT:
+
+                pygame.quit()
+                sys.exit()
+        
+        self.cusror.update()
+        self.cusror.draw()
+
 
     def render(self):
         self.render_items = sorted(self.render_items, key=operator.attrgetter("hitbox.bottom"))
