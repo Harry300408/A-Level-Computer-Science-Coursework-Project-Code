@@ -62,7 +62,7 @@ class engine():
         self.NonStatic_Items:   pygame.sprite.Group     =   pygame.sprite.Group()
         
         ## GAME STATE ##
-        self.menu_state = "main_menu"
+        self.menu_state = "start_menu"
         
         ## MENU BGs  ##
         self.Bgs = []
@@ -94,6 +94,10 @@ class engine():
 
         self.mm_buttons = [self.exit_button, self.settings_button, self.play_button]
         self.new_load_buttons = [self.loadgame_button, self.newgame_button]
+        
+        self.settings_back_button = Button((150, self.YRes - 50), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Back", 32, (255, 255, 255), (255, 255, 0), "settings_back_button", "Return to the start menu.")
+        
+        self.settings_buttons = [self.settings_back_button]
         
         count = 0
         for i in self.Bgs:
@@ -139,6 +143,14 @@ class engine():
                         
                         if i.type == "settings_button":
                             self.menu_state = "settings_menu"
+                            
+                for i in self.new_load_buttons:
+                    if i.check_for_update():
+                        if i.type == "newgame_button":
+                            self.menu_state = "game"
+                        
+                        if i.type == "loadgame_button":
+                            pass
 
         for i in self.mm_buttons:
             i.update()
@@ -168,6 +180,15 @@ class engine():
 
                 pygame.quit()
                 sys.exit()
+                
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for i in self.settings_buttons:
+                    if i.check_for_update():
+                        if i.type == "settings_back_button":
+                            self.menu_state = "start_menu"
+                
+        for i in self.settings_buttons:
+            i.update()
         
         self.cusror.update()
         self.cusror.draw()

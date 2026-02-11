@@ -8,7 +8,7 @@ if __name__ == "__main__":
     game_engine = engine(window_configs, LANG)
 
     while True:
-        if game_engine.menu_state == "main_menu":
+        if game_engine.menu_state == "start_menu":
             game_engine.main_menu()
         elif game_engine.menu_state == "game":
             game_engine.run()
