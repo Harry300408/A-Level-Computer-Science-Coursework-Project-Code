@@ -30,7 +30,7 @@ if __name__ == "__main__":
     while True:
         screen.fill((0, 0, 0))
         
-        slider.render(screen)
+        slider.update(screen)
 
         for event in pygame.event.get():
 
@@ -47,7 +47,6 @@ if __name__ == "__main__":
                 for i in switches:
                     if i.check_for_update():
                         i.state = not i.state
-                        print("Switch toggled to", i.state)
 
 
         for i in gui_elements:

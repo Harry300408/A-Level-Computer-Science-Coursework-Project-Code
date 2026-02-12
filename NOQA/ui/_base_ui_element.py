@@ -31,9 +31,19 @@ class ui_element():
      
 
     def on_hover(self):
-        pygame.draw.rect(pygame.display.get_surface(), (43, 43, 43), pygame.Rect(self.mouse_pos[0] + 5, self.mouse_pos[1] + 10, self.textbox_txt_rect.width + 20, self.textbox_txt_rect.height + 10))  
-        pygame.draw.rect(pygame.display.get_surface(), (97, 97, 97), pygame.Rect(self.mouse_pos[0] + 8, self.mouse_pos[1] + 13, self.textbox_txt_rect.width + 14.5, self.textbox_txt_rect.height + 4.25))  
-        pygame.display.get_surface().blit(self.textbox_txt, (self.mouse_pos[0] + 15, self.mouse_pos[1] + 15))
+        pos = pygame.mouse.get_pos()
+        
+        if pos[0] <= (pygame.display.get_surface().get_width() / 2) and pos[1] <= (pygame.display.get_surface().get_height() / 2):
+            
+            pygame.draw.rect(pygame.display.get_surface(), (43, 43, 43), pygame.Rect(self.mouse_pos[0] + 5, self.mouse_pos[1] + 10, self.textbox_txt_rect.width + 20, self.textbox_txt_rect.height + 10))  
+            pygame.draw.rect(pygame.display.get_surface(), (97, 97, 97), pygame.Rect(self.mouse_pos[0] + 8, self.mouse_pos[1] + 13, self.textbox_txt_rect.width + 14.5, self.textbox_txt_rect.height + 4.25))  
+            pygame.display.get_surface().blit(self.textbox_txt, (self.mouse_pos[0] + 15, self.mouse_pos[1] + 15))
+            
+        if pos[0] >= (pygame.display.get_surface().get_width() / 2) and pos[1] <= (pygame.display.get_surface().get_height() / 2):
+            
+            pygame.draw.rect(pygame.display.get_surface(), (43, 43, 43), pygame.Rect((self.mouse_pos[0] + 5) - (self.textbox_txt_rect.width + 20), self.mouse_pos[1] + 10, self.textbox_txt_rect.width + 20, self.textbox_txt_rect.height + 10))  
+            pygame.draw.rect(pygame.display.get_surface(), (97, 97, 97), pygame.Rect((self.mouse_pos[0] + 8) - (self.textbox_txt_rect.width + 20), self.mouse_pos[1] + 13, self.textbox_txt_rect.width + 14.5, self.textbox_txt_rect.height + 4.25))  
+            pygame.display.get_surface().blit(self.textbox_txt, ((self.mouse_pos[0]) - (self.textbox_txt_rect.width + 5), self.mouse_pos[1] + 15))
     
     def check_for_update(self):
         if self.rect.collidepoint(self.mouse_pos):  return True

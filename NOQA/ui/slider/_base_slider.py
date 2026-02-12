@@ -21,12 +21,14 @@ class Slider():
                 )
 
                 button_x = self.slider_left_pos + int(self.size[0] * initial_val)
-                self.button_rect = pygame.Rect(button_x - 5, self.slider_top_pos, 10, self.size[1])
+                self.button_rect = pygame.Rect(button_x - 5, self.slider_top_pos, 20, self.size[1])
+                
 
-        def render(self, app):
+        def update(self, display):
                 # Draw slider bar
-                pygame.draw.rect(app, "darkgrey", self.container_rect)
-                pygame.draw.rect(app, "blue", self.button_rect)
+                pygame.draw.rect(display, "#671E1EFF", self.container_rect, border_radius=10)
+                pygame.draw.circle(display, "#AE2424FF", (self.button_rect.x + 5, self.button_rect.y + (self.size[1]//2)), 15)
+                
 
                 # Mouse logic
                 mouse_pos = pygame.mouse.get_pos()

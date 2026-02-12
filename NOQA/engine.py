@@ -1,6 +1,11 @@
 ﻿from re import S
 import sys, pygame, operator, bisect
 
+from screeninfo import get_monitors 
+
+import pygame_widgets
+from pygame_widgets.dropdown import Dropdown
+
 from NOQA.tiles.base_tile import *
 from NOQA.tiles.liquid.base_liquid import *
 
@@ -17,10 +22,13 @@ from NOQA.debug404.debug import debug404
 
 class engine():
     def __init__(self, configs, LANG):
-        self.XRes:  int     =   configs[0]
-        self.YRes:  int     =   configs[1]
-        self.FPS:   int     =   configs[3]
-        self.dt:  float     =   0
+        self.XRes:  int             =   configs[0]
+        self.YRes:  int             =   configs[1]
+        self.FULLSCREEN: bool       =   configs[2]
+        self.FPS:   int             =   configs[3]
+        self.dt:  float             =   0
+        
+        self.language       = LANG
         
         self.debug:         bool    =   True
         self.show_hitboxes: bool    =   True
@@ -95,9 +103,108 @@ class engine():
         self.mm_buttons = [self.exit_button, self.settings_button, self.play_button]
         self.new_load_buttons = [self.loadgame_button, self.newgame_button]
         
-        self.settings_back_button = Button((150, self.YRes - 50), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Back", 32, (255, 255, 255), (255, 255, 0), "settings_back_button", "Return to the start menu.")
+        self.settings_back_button = Button((150, self.YRes - 50), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Back & Apply Settings", 32, (255, 255, 255), (255, 255, 0), "settings_back_button", "Return to the start menu.")
+        
+        self.screens = get_monitors()
+        
+        for i in self.screens:
+            if i.is_primary:
+                self.primary_screen = i
+        
+        self.resolution = Dropdown(
+            self.screen, # Display
+            (self.XRes / 2) - 187.5, # X pos
+            (self.YRes / 2) - 200, # Y pos
+            250, # Width
+            50, # Height
+            
+            name=f'Current: {self.XRes}x{self.YRes}',
+            
+            choices=[
+                '1280x720', 
+                '1920x1080', 
+                '2560x1440',
+                f'Screen Resolution: {self.primary_screen.width}x{self.primary_screen.height}'],
+            
+            borderRadius=3, 
+            colour=pygame.Color('#671E1EFF'), 
+            values=[(1280, 720), (1920, 1080), (2560, 1440), (self.primary_screen.width, self.primary_screen.height)], 
+            direction='down', 
+            textHAlign='centre',
+            textColour=pygame.Color('white'),
+            hoverColour=pygame.Color('#AE2424FF'),
+            font = pygame.font.Font("gfx/fonts/ui/Enhance 1.0.ttf", 30)
+        )
+        
+        self.language = Dropdown(
+            self.screen, # Display
+            (self.XRes / 2) - 62.5, # X pos
+            (self.YRes / 2) - 125, # Y pos
+            250, # Width
+            50, # Height
+            
+            name=f'Current: {self.language}',
+            
+            choices=[
+                'English', 
+                'French (Français)'
+            ],
+            
+            borderRadius=3, 
+            colour=pygame.Color('#671E1EFF'), 
+            values=['en', 'fr'], 
+            direction='down', 
+            textHAlign='centre',
+            textColour=pygame.Color('white'),
+            hoverColour=pygame.Color('#AE2424FF'),
+            font = pygame.font.Font("gfx/fonts/ui/Enhance 1.0.ttf", 30)
+        )
+        
+        self.vol_slider = Slider(
+            ((self.XRes / 2) - 62.5, (self.YRes / 2) - 35), # Position
+            (250, 30), # Size
+            0.1, # Initial Value
+            0, # Min Value
+            100 # Max Value
+        )
+        
+        self.sfx_slider = Slider(
+            ((self.XRes / 2) + 62.5, (self.YRes / 2) + 20), # Position
+            (250, 30), # Size
+            0.1, # Initial Value
+            0, # Min Value
+            100 # Max Value
+        )
+        
+        self.fullscreen_TF = switcher(
+            (self.XRes - 28, self.YRes - 28), # Position
+            "gfx/ui/menus/switcher/switcher_off.png", 
+            "gfx/ui/menus/switcher/switcher_on.png",
+            self.FULLSCREEN, # State
+            "Toggle Fullscreen Mode" # Hint Text
+        )
         
         self.settings_buttons = [self.settings_back_button]
+        self.settings_switches = [self.fullscreen_TF]
+        
+        self.settings_sliders = [self.vol_slider, self.sfx_slider]
+        
+        self.resolution.hide()
+        self.language.hide()
+        
+        self.settings_font       = pygame.font.Font("gfx/fonts/ui/Enhance 1.0.ttf", 50)
+        
+        self.resolution_txt             = self.settings_font.render("Resolution", True, "white")
+        self.resolution_txt_rect        = self.resolution_txt.get_rect(center=(self.XRes / 2 + 150, self.YRes / 2 - 175))
+        
+        self.language_txt             = self.settings_font.render("Language", True, "white")
+        self.language_txt_rect        = self.language_txt.get_rect(center=(self.XRes / 2 - 150, self.YRes / 2 - 105))
+        
+        self.sfx_txt             = self.settings_font.render("SFX", True, "white")
+        self.sfx_txt_rect        = self.sfx_txt.get_rect(center=(self.XRes / 2 + 120, self.YRes / 2 - 37))
+        
+        self.music_txt             = self.settings_font.render("Music", True, "white")
+        self.music_txt_rect        = self.music_txt.get_rect(center=(self.XRes / 2 - 120, self.YRes / 2 + 17 ))
         
         count = 0
         for i in self.Bgs:
@@ -134,8 +241,8 @@ class engine():
                 for i in self.mm_buttons:
                     if i.check_for_update():
                         if i.type == "exit_button":
-                             pygame.quit()
-                             sys.exit()
+                            pygame.quit()
+                            sys.exit()
 
                         if i.type == "play_button":
                             self.new_load = True
@@ -143,6 +250,8 @@ class engine():
                         
                         if i.type == "settings_button":
                             self.menu_state = "settings_menu"
+                            self.resolution.show()
+                            self.language.show()
                             
                 for i in self.new_load_buttons:
                     if i.check_for_update():
@@ -174,6 +283,12 @@ class engine():
         self.screen.blit(self.title_txt_outline, self.title_txt_rect_outline)
         self.screen.blit(self.title_txt, self.title_txt_rect)
         
+        self.screen.blit(self.resolution_txt, self.resolution_txt_rect)
+        self.screen.blit(self.language_txt, self.language_txt_rect)
+        self.screen.blit(self.sfx_txt, self.sfx_txt_rect)
+        self.screen.blit(self.music_txt, self.music_txt_rect)
+        
+        
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
@@ -186,9 +301,24 @@ class engine():
                     if i.check_for_update():
                         if i.type == "settings_back_button":
                             self.menu_state = "start_menu"
+                            
+                            self.resolution.hide()
+                            self.language.hide()
                 
+                for i in self.settings_switches:
+                    if i.check_for_update():
+                        i.state = not i.state
+        
         for i in self.settings_buttons:
             i.update()
+        
+        for i in self.settings_switches:
+            i.update()
+        
+        for i in self.settings_sliders:
+            i.update(self.screen)
+        
+        pygame_widgets.update(pygame.event.get()) 
         
         self.cusror.update()
         self.cusror.draw()

@@ -58,13 +58,14 @@ def set_window_configs_to_default():
         raise SystemError("'defaults.json' file not found or doesn't have the right values, please either repair the game or redownload from source.")
 
 def game_lang_load():
-    global LANG
     
     try:
         config = configparser.ConfigParser()
         config.read("settings.ini")
         
         LANG = str(config['LANGUAGE']['locale'])
+        
+        return str(LANG)
     
     except:
         
@@ -83,7 +84,7 @@ def game_lang_load():
                 
                 config.write(config_file)
 
-            return LANG
+            return str(LANG)
              
         except:
             raise SystemError("'defaults.json' file not found or doesn't have the right values, please either repair the game or redownload from source.")
