@@ -1,0 +1,175 @@
+{
+    "window": {
+        "width": 1000,
+        "height": 1000,
+        "scale": 1,
+        "caption": "Island World Gen"
+    },
+
+    "generation": {
+        "seed": null,
+        "octaves": 5,
+        "persistence": 0.5,
+        "lacunarity": 2.0,
+
+        "island": {
+            "center_jitter": 0.0,
+            "radius": 0.58,
+            "edge_falloff": 2.0
+        },
+
+        "sea_level": 0.38,
+
+        "shallow_water": {
+            "enabled": true,
+            "band_pixels": 50
+        }
+    },
+
+    "biomes": {
+        "colors": {
+            "deep_water": [ 10, 35, 90 ],
+            "shallow_water": [ 30, 110, 170 ],
+
+            "beach": [ 210, 200, 140 ],
+            "grassland": [ 70, 160, 90 ],
+            "forest": [ 40, 120, 60 ],
+            "swamp": [ 60, 95, 70 ],
+            "savanna": [ 170, 180, 90 ],
+            "desert": [ 220, 210, 120 ],
+            "hill": [ 105, 125, 80 ],
+            "mountain": [ 120, 120, 120 ],
+            "snow": [ 230, 230, 240 ]
+        },
+
+        "rules": [
+            {
+                "name": "beach",
+                "height": [ 0.38, 0.42 ]
+            },
+
+            {
+                "name": "snow",
+                "height": [ 0.86, 1.01 ],
+                "temp": [ 0.0, 0.48 ]
+            },
+            {
+                "name": "mountain",
+                "height": [ 0.82, 1.01 ]
+            },
+            {
+                "name": "hill",
+                "height": [ 0.70, 0.82 ]
+            },
+
+            {
+                "name": "swamp",
+                "height": [ 0.52, 0.70 ],
+                "moisture": [ 0.72, 1.01 ],
+                "temp": [ 0.35, 1.01 ]
+            },
+            {
+                "name": "forest",
+                "height": [ 0.42, 0.70 ],
+                "moisture": [ 0.55, 1.01 ]
+            },
+            {
+                "name": "grassland",
+                "height": [ 0.42, 0.70 ],
+                "moisture": [ 0.35, 0.55 ]
+            },
+            {
+                "name": "savanna",
+                "height": [ 0.42, 0.70 ],
+                "moisture": [ 0.0, 0.35 ],
+                "temp": [ 0.55, 1.01 ]
+            },
+            {
+                "name": "desert",
+                "height": [ 0.42, 0.70 ],
+                "moisture": [ 0.0, 0.35 ],
+                "temp": [ 0.0, 0.55 ]
+            }
+        ]
+    },
+
+    "decorators": {
+        "trees": {
+            "enabled": true,
+            "per_biome_density": {
+                "forest": 0.42,
+                "grassland": 0.06,
+                "swamp": 0.10,
+                "savanna": 0.05,
+                "hill": 0.03
+            },
+            "color": [ 18, 60, 25 ]
+        },
+        "bushes": {
+            "enabled": true,
+            "per_biome_density": {
+                "forest": 0.12,
+                "grassland": 0.07,
+                "swamp": 0.10,
+                "savanna": 0.08,
+                "desert": 0.02,
+                "hill": 0.04
+            },
+            "color": [ 35, 85, 35 ]
+        },
+        "grass": {
+            "enabled": true,
+            "per_biome_density": {
+                "grassland": 0.18,
+                "forest": 0.08,
+                "savanna": 0.14
+            },
+            "color": [ 95, 200, 110 ]
+        }
+    },
+
+    "ores": {
+        "enabled": true,
+        "clumping": {
+            "noise_grid": 10
+        },
+        "types": [
+            {
+                "name": "iron",
+                "color": [ 30, 30, 30 ],
+                "min_height": 0.70,
+                "max_height": 0.98,
+                "per_biome_density": {
+                    "hill": 0.06,
+                    "mountain": 0.08
+                }
+            },
+            {
+                "name": "coal",
+                "color": [ 150, 90, 70 ],
+                "min_height": 0.72,
+                "max_height": 0.98,
+                "per_biome_density": {
+                    "hill": 0.04,
+                    "mountain": 0.05
+                }
+            },
+            {
+                "name": "stone",
+                "color": [ 230, 200, 60 ],
+                "min_height": 0.80,
+                "max_height": 0.98,
+                "per_biome_density": {
+                    "mountain": 0.015
+                }
+            }
+        ]
+    },
+
+    "export": {
+        "auto_save_json": false,
+        "json_path": "latest_map.json",
+        "print_to_console": true,
+        "pretty_print": false
+    }
+}
