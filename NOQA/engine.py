@@ -101,7 +101,7 @@ class engine():
         self.exit_button = Button((self.XRes / 2, (self.YRes / 2) + 70), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Exit Game", 32, (255, 255, 255), (255, 255, 0), "exit_button", "Exit the game")
 
         self.mm_buttons = [self.exit_button, self.settings_button, self.play_button]
-        self.new_load_buttons = [self.loadgame_button, self.newgame_button]
+        self.new_load_buttons = [self.newgame_button, self.loadgame_button]
         
         self.settings_back_button = Button((150, self.YRes - 50), 'gfx/ui/menus/button/button_bg.png', 'gfx/ui/menus/button/button_pressed.png', "Back & Apply Settings", 32, (255, 255, 255), (255, 255, 0), "settings_back_button", "Return to the start menu.")
         
@@ -183,6 +183,12 @@ class engine():
             self.FULLSCREEN, # State
             "Toggle Fullscreen Mode" # Hint Text
         )
+        
+        self.settings_font       = pygame.font.Font("gfx/fonts/ui/Enhance 1.0.ttf", 50)
+        
+        self.fullscreen_txt             = self.settings_font.render("Fullscreen Mode", True, "white")
+        self.fullscreen_txt_rect        = self.fullscreen_txt.get_rect(bottomright=(self.XRes - 50, self.YRes - 2))
+        
         
         self.settings_buttons = [self.settings_back_button]
         self.settings_switches = [self.fullscreen_TF]
@@ -287,6 +293,7 @@ class engine():
         self.screen.blit(self.language_txt, self.language_txt_rect)
         self.screen.blit(self.sfx_txt, self.sfx_txt_rect)
         self.screen.blit(self.music_txt, self.music_txt_rect)
+        self.screen.blit(self.fullscreen_txt, self.fullscreen_txt_rect)
         
         
         for event in pygame.event.get():
