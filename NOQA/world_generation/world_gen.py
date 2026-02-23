@@ -5,13 +5,9 @@ from typing import Dict, Tuple, Optional, List
 
 import numpy as np
 
-# Default config path
 CONFIG_PATH = os.path.join("configs", "worldgen.json")
 
 
-# -----------------------------
-# Config
-# -----------------------------
 def load_config(path: str = CONFIG_PATH) -> dict:
     if not os.path.exists(path):
         raise FileNotFoundError(
@@ -21,19 +17,11 @@ def load_config(path: str = CONFIG_PATH) -> dict:
         return json.load(f)
 
 
-# -----------------------------
-# Noise (fast value noise + FBM)
-# -----------------------------
 def _smoothstep(t: np.ndarray) -> np.ndarray:
     return t * t * (3.0 - 2.0 * t)
 
 
 def value_noise_2d(w: int, h: int, grid: int, rng: np.random.Generator) -> np.ndarray:
-    """
-    2D value noise:
-      - random values on coarse grid
-      - smooth interpolation to full res
-    """
     gx = max(2, (w // grid) + 2)
     gy = max(2, (h // grid) + 2)
 
@@ -89,9 +77,6 @@ def fbm_noise(
     return total
 
 
-# -----------------------------
-# Utility
-# -----------------------------
 def normalize01(a: np.ndarray) -> np.ndarray:
     mn = float(a.min())
     mx = float(a.max())
@@ -100,9 +85,6 @@ def normalize01(a: np.ndarray) -> np.ndarray:
     return ((a - mn) / (mx - mn)).astype(np.float32)
 
 
-# -----------------------------
-# Biome mappings
-# -----------------------------
 def biome_names() -> Dict[int, str]:
     return {
         0: "deep_water",
@@ -126,9 +108,6 @@ def biome_codes() -> Dict[str, int]:
     return inv
 
 
-# -----------------------------
-# Island shaping
-# -----------------------------
 def island_mask(
     w: int,
     h: int,
@@ -137,7 +116,6 @@ def island_mask(
     center_jitter: float,
     rng: np.random.Generator,
 ) -> np.ndarray:
-    # Centered island; only jitter if center_jitter > 0
     cx = 0.5
     cy = 0.5
     if center_jitter > 0.0:
@@ -153,9 +131,6 @@ def island_mask(
     return np.power(t, edge_falloff).astype(np.float32)
 
 
-# -----------------------------
-# Biomes from config rules
-# -----------------------------
 def _range_mask(val: np.ndarray, r: Optional[List[float]]) -> np.ndarray:
     if r is None:
         return np.ones_like(val, dtype=bool)
@@ -170,10 +145,6 @@ def classify_biomes_from_rules(
     sea_level: float,
     rules: list,
 ) -> np.ndarray:
-    """
-    Water = height < sea_level.
-    Land biomes assigned by rule order (first match wins).
-    """
     h, w = height.shape
     codes = biome_codes()
 
@@ -202,13 +173,7 @@ def classify_biomes_from_rules(
     return biome
 
 
-# -----------------------------
-# Shallow water ring (distance-to-land)
-# -----------------------------
 def compute_shallow_ring(biome: np.ndarray, band_pixels: int) -> np.ndarray:
-    """
-    Marks deep_water pixels as shallow_water if within band_pixels of land.
-    """
     deep = biome_codes()["deep_water"]
     water = (biome == deep)
     land = ~water
@@ -218,7 +183,6 @@ def compute_shallow_ring(biome: np.ndarray, band_pixels: int) -> np.ndarray:
     dist = np.full((h, w), INF, dtype=np.int32)
     dist[land] = 0
 
-    # forward pass
     for y in range(h):
         row = dist[y]
         up = dist[y - 1] if y > 0 else None
@@ -234,7 +198,6 @@ def compute_shallow_ring(biome: np.ndarray, band_pixels: int) -> np.ndarray:
                 best = min(best, row[x - 1] + 1)
             row[x] = best
 
-    # backward pass
     for y in range(h - 1, -1, -1):
         row = dist[y]
         dn = dist[y + 1] if y + 1 < h else None
@@ -253,18 +216,12 @@ def compute_shallow_ring(biome: np.ndarray, band_pixels: int) -> np.ndarray:
     return water & (dist <= int(band_pixels))
 
 
-# -----------------------------
-# Decorators + Ores masks
-# -----------------------------
 def place_decorators(
     biome: np.ndarray,
     rng: np.random.Generator,
     densities: Dict[str, float],
     noise: np.ndarray,
 ) -> np.ndarray:
-    """
-    Returns boolean mask where decorator exists.
-    """
     h, w = biome.shape
     out = np.zeros((h, w), dtype=bool)
     names = biome_names()
@@ -292,9 +249,6 @@ def place_ore_type(
     ore_cfg: dict,
     clump_noise: np.ndarray,
 ) -> np.ndarray:
-    """
-    Returns boolean mask where this ore spawns.
-    """
     h, w = height.shape
     out = np.zeros((h, w), dtype=bool)
 
@@ -315,28 +269,14 @@ def place_ore_type(
         if not np.any(bm):
             continue
 
-        thresh = 1.0 - np.clip(d, 0.0, 0.25)  # keep ores sparse
+        thresh = 1.0 - np.clip(d, 0.0, 0.25)
         score = 0.65 * clump_noise + 0.35 * r
         out |= bm & valid_height & (score >= thresh)
 
     return out
 
 
-# -----------------------------
-# Public API: generate_world_data()
-# -----------------------------
 def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
-    """
-    Library-friendly ONE CALL function.
-
-    Returns:
-      world_tiles (2D list): world_tiles[y][x] = {"pos": (x,y), "type": "<biome_name>"}
-      object_tiles (2D list): object_tiles[y][x] = {"pos": (x,y), "type": None or "<object_or_ore_type>"}
-
-    Notes:
-      - object type is a single string (priority: ore > tree > bush > grass)
-      - uses settings from configs/worldgen.json
-    """
     cfg = load_config(config_path)
 
     W = int(cfg["window"]["width"])
@@ -350,7 +290,6 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
 
     rng = np.random.default_rng(seed)
 
-    # Generation params
     octaves = int(gen["octaves"])
     persistence = float(gen["persistence"])
     lacunarity = float(gen["lacunarity"])
@@ -364,34 +303,28 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
 
     base_grid = max(24, min(W, H) // 6)
 
-    # Noises
     height_noise = normalize01(fbm_noise(W, H, base_grid, octaves, persistence, lacunarity, rng))
     moisture = normalize01(fbm_noise(W, H, base_grid, max(3, octaves - 1), persistence, lacunarity, rng))
     temp = normalize01(fbm_noise(W, H, base_grid, max(3, octaves - 1), persistence, lacunarity, rng))
 
-    # Island mask forces one centered island
     mask = island_mask(W, H, radius, edge_falloff, center_jitter, rng)
 
     heightmap = normalize01(0.70 * height_noise + 0.30 * mask)
     heightmap = heightmap * (0.30 + 0.70 * mask)
     heightmap = normalize01(heightmap)
 
-    # Biomes
     rules = cfg["biomes"].get("rules", [])
     biome = classify_biomes_from_rules(heightmap, moisture, temp, sea_level, rules)
 
-    # Shallow ring (slightly more out via band_pixels in JSON)
     shallow_cfg = gen.get("shallow_water", {})
     if shallow_cfg.get("enabled", True):
         band = int(shallow_cfg.get("band_pixels", 14))
         shallow = compute_shallow_ring(biome, band_pixels=band)
         biome[shallow] = biome_codes()["shallow_water"]
 
-    # Decorator noise for clumping
     rng_dec = np.random.default_rng((seed ^ (int(time.time() * 1000) & 0xFFFFFFFF)) & 0xFFFFFFFF)
     decorator_noise = normalize01(value_noise_2d(W, H, grid=max(12, min(W, H) // 10), rng=rng_dec))
 
-    # Decorators masks
     dec = cfg.get("decorators", {})
     trees_mask = np.zeros((H, W), dtype=bool)
     bushes_mask = np.zeros((H, W), dtype=bool)
@@ -409,7 +342,6 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
         gdens = dec["grass"].get("per_biome_density", {})
         grass_mask = place_decorators(biome, rng_dec, gdens, decorator_noise)
 
-    # Ores masks (name -> mask)
     ores_cfg = cfg.get("ores", {})
     ore_masks: Dict[str, np.ndarray] = {}
     if ores_cfg.get("enabled", True):
@@ -419,25 +351,19 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
             ore_name = str(ore.get("name", "ore"))
             ore_masks[ore_name] = place_ore_type(heightmap, biome, rng_dec, ore, ore_noise)
 
-    # Build 2D return grids (minimal format)
     name_map = biome_names()
 
     world_tiles: List[List[dict]] = []
     object_tiles: List[List[dict]] = []
 
-    # Precompute per-cell object type with priority: ore > tree > bush > grass
-    # Start with None everywhere
     obj_type = np.full((H, W), None, dtype=object)
 
-    # Lowest priority first, overwrite upwards
     obj_type[grass_mask] = "grass"
     obj_type[bushes_mask] = "bush"
     obj_type[trees_mask] = "tree"
-    # Ores highest priority
     for ore_name, m in ore_masks.items():
         obj_type[m] = ore_name
 
-    # Convert to python 2D lists row-by-row
     for y in range(H):
         wrow = []
         orow = []
@@ -448,7 +374,6 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
         world_tiles.append(wrow)
         object_tiles.append(orow)
 
-    # Optional console prints (small + useful)
     deep = biome_codes()["deep_water"]
     non_sea = int(np.count_nonzero(biome != deep))
     print(f"[WORLD] seed={seed} size={W}x{H} non-sea-tiles={non_sea}")
@@ -456,12 +381,7 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
     return world_tiles, object_tiles
 
 
-# -----------------------------
-# If you run this file directly, do a quick generation test
-# -----------------------------
 if __name__ == "__main__":
     world_tiles, object_tiles = generate_world_data()
-
-    # Small sanity sample
     print("[SAMPLE] world_tiles[0][0] =", world_tiles[0][0])
     print("[SAMPLE] object_tiles[0][0] =", object_tiles[0][0])
