@@ -5,7 +5,7 @@ from typing import Dict, Tuple, Optional, List
 
 import numpy as np
 
-CONFIG_PATH = os.path.join("configs", "worldgen.json")
+CONFIG_PATH = "NOQA/world_generation/configs/worldgen.json"
 
 
 def load_config(path: str = CONFIG_PATH) -> dict:
