@@ -379,9 +379,3 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
     print(f"[WORLD] seed={seed} size={W}x{H} non-sea-tiles={non_sea}")
 
     return world_tiles, object_tiles
-
-
-if __name__ == "__main__":
-    world_tiles, object_tiles = generate_world_data()
-    print("[SAMPLE] world_tiles[0][0] =", world_tiles[0][0])
-    print("[SAMPLE] object_tiles[0][0] =", object_tiles[0][0])
