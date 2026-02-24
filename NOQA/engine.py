@@ -20,6 +20,8 @@ from NOQA.ui.switch._base_switch import *
 from NOQA.ui.slider._base_slider import *
 from NOQA.debug404.debug import debug404
 
+from NOQA.world_generation.world_gen import generate_world_data
+
 class engine():
     def __init__(self, configs, LANG):
         self.XRes:  int             =   configs[0]
