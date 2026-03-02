@@ -5,13 +5,13 @@ from typing import Dict, Tuple, Optional, List
 
 import numpy as np
 
-CONFIG_PATH = "NOQA/world_generation/configs/worldgen.json"
+CONFIG_PATH = "NOQA/world_generation/configs/world_gen_configs.json"
 
 
 def load_config(path: str = CONFIG_PATH) -> dict:
     if not os.path.exists(path):
         raise FileNotFoundError(
-            f"Missing config file at '{path}'. Create it at configs/worldgen.json."
+            f"Missing config file at '{path}'. Create it at configs/world_gen_configs.json."
         )
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
