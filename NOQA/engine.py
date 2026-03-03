@@ -311,6 +311,11 @@ class engine():
                         if i.type == "settings_back_button":
                             self.menu_state = "start_menu"
                             
+                            if self.new_load == True:
+                                self.mm_buttons.insert(2, self.play_button)
+                            
+                            self.new_load = False
+                            
                             self.resolution.hide()
                             self.language.hide()
                 
