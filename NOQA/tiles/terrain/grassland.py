@@ -14,3 +14,4 @@ class Grassland(Tile):
         self.rect: pygame.Rect = self.image.get_rect(center=self.pos)     
                 ## Sets rect attribute based on image and position 
                 ## (mainly used for rendereing)
+                

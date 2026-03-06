@@ -11,7 +11,16 @@ import pygame_widgets
 from pygame_widgets.dropdown import Dropdown
 
 from NOQA.tiles.base_tile import *
-from NOQA.tiles.terrain.grassland import *
+from NOQA.tiles.terrain.grassland import Grassland
+from NOQA.tiles.terrain.beach import Beach
+from NOQA.tiles.terrain.forest import Forest 
+from NOQA.tiles.terrain.swamp import Swamp
+from NOQA.tiles.terrain.savanna import Savanna
+from NOQA.tiles.terrain.desert import Desert
+from NOQA.tiles.terrain.hill import Hill
+from NOQA.tiles.terrain.mountain import Mountain
+from NOQA.tiles.terrain.snow import Snow
+
 from NOQA.tiles.liquid.base_liquid import *
 from NOQA.tiles.liquid.deep_water import Deep_Water
 from NOQA.tiles.liquid.shallow_water import Shallow_Water
@@ -563,6 +572,54 @@ class engine:
 
                 elif j["type"] == "shallow_water":
                     tile = Shallow_Water(
+                        [self.floor_tiles, self.world],
+                        (world_x, world_y),
+                    )
+                
+                elif j["type"] == "beach":
+                    tile = Beach(
+                        [self.floor_tiles, self.world],
+                        (world_x, world_y),
+                    )
+                
+                elif j["type"] == "forest":
+                    tile = Forest(
+                        [self.floor_tiles, self.world],
+                        (world_x, world_y),
+                    )
+                
+                elif j["type"] == "swamp":
+                    tile = Swamp(
+                        [self.floor_tiles, self.world],
+                        (world_x, world_y),
+                    )
+                
+                elif j["type"] == "savanna":
+                    tile = Savanna(
+                        [self.floor_tiles, self.world],
+                        (world_x, world_y),
+                    )
+                
+                elif j["type"] == "desert":
+                    tile = Desert(
+                        [self.floor_tiles, self.world],
+                        (world_x, world_y),
+                    )
+                
+                elif j["type"] == "hill":
+                    tile = Hill(
+                        [self.floor_tiles, self.world],
+                        (world_x, world_y),
+                    )
+                    
+                elif j["type"] == "mountain":
+                    tile = Mountain(
+                        [self.floor_tiles, self.world],
+                        (world_x, world_y),
+                    )
+                
+                elif j["type"] == "snow":
+                    tile = Snow(
                         [self.floor_tiles, self.world],
                         (world_x, world_y),
                     )
