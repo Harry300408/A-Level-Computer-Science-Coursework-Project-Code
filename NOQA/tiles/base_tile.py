@@ -19,6 +19,6 @@ class Tile(pygame.sprite.Sprite):
         self.rect: pygame.Rect = self.image.get_rect(center=self.pos)     
                 ## Sets rect attribute based on image and position 
                 ## (mainly used for rendereing)
-    
-    def update(self):   ## Update method (Empty on default, wont be on certain types)                                                                                
-       pass                                                                                                     
+
+    def update(self):
+        pass
