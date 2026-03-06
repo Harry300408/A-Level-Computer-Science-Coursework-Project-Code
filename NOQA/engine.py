@@ -1,4 +1,5 @@
-﻿from re import S
+﻿import json
+from re import S
 import sys, pygame, operator, bisect
 
 from screeninfo import get_monitors 
@@ -8,6 +9,7 @@ from pygame_widgets.dropdown import Dropdown
 
 from NOQA.tiles.base_tile import *
 from NOQA.tiles.liquid.base_liquid import *
+from NOQA.tiles.terrain.grassland import *
 
 from NOQA.assets.base_asset import *
 from NOQA.assets.trees.L_Tree import *
@@ -223,12 +225,9 @@ class engine():
         self.bgrect = self.Bgs[0].get_rect(topleft = (0, 0))
         self.slide_num = random.randint(0, len(self.Bgs) - 1)
         
-        Tile([self.world, self.floor_tiles, self.Static_Items], (250, 300))
-        Asset([self.world, self.assets, self.Static_Items, self.render_items], (175, 100), True, "scenery", False)
-        Asset([self.world, self.assets, self.Static_Items, self.render_items], (125, 75), True, "scenery", False)
-        Liquid([self.world, self.floor_tiles, self.Static_Items], (100, 200))
-        
-        LTree([self.world, self.assets, self.Static_Items, self.render_items], (300, 300))
+        self.create_new_world_data()
+        self.screen_width = 1280
+        self.screen_height = 720
         
         CC([self.player, self.render_items])
         
@@ -337,15 +336,52 @@ class engine():
         self.cusror.update()
         self.cusror.draw()
 
+    def create_new_world_data(self):
+        world_data, obj_data = generate_world_data()
+        
+        with open("NOQA/world_generation/configs/world_gen_configs.json", "r", encoding="utf-8") as f:  # Open JSON file safely with UTF-8
+            configs = json.load(f)  # Parse JSON into Python dict and return it
+
+        width_offset = configs["window"]["width"] * self.tile_size / 2
+        height_offset = configs["window"]["height"] * self.tile_size / 2
+
+        for i in world_data:
+            
+            for j in i:
+                
+                if j['type'] == "grassland":
+                    Grassland([self.floor_tiles, self.world], ((j['pos'][0] * 32) - (width_offset), (j['pos'][1] * 32) - (height_offset)))
+                
 
     def render(self):
         self.render_items = sorted(self.render_items, key=operator.attrgetter("hitbox.bottom"))
    
+        ## Boundries for 'visible'
+        left_bound = self.cameraX                                                                                               ## Left boundry
+        right_bound = self.cameraX + self.screen_width                                                                          ## Right boundry
+        top_bound = self.cameraY                                                                                                ## Top boundry
+        bottom_bound = self.cameraY + self.screen_height                                                                        ## Bottom boundry
+        
+        self.visible_sprites = []
+        
+        for sprite in self.floor_tiles:                                                                                        ## Loops through sprites in group
+            sprite_x, sprite_y = sprite.rect.topleft                                                                            ## Gets sprite position
+
+            # Check if tile is within the visible area
+            if left_bound - self.tile_size < sprite_x < right_bound and top_bound - self.tile_size < sprite_y < bottom_bound:   ## Fancy calculation to see if it's in view
+                self.visible_sprites.append((sprite.image, (sprite_x - self.cameraX, sprite_y - self.cameraY)))                              ## If it's in view it will draw to screen
+        
         for i in self.floor_tiles:
             self.screen.blit(i.image, (i.rect.x, i.rect.y))
+            
+        for sprite in self.render_items:                                                                                        ## Loops through sprites in group
+            sprite_x, sprite_y = sprite.rect.topleft                                                                            ## Gets sprite position
 
-        for i in self.render_items:
-            self.screen.blit(i.image, (i.rect.x, i.rect.y))
+            # Check if tile is within the visible area
+            if left_bound - self.tile_size < sprite_x < right_bound and top_bound - self.tile_size < sprite_y < bottom_bound:   ## Fancy calculation to see if it's in view
+                self.visible_sprites.append((sprite.image, (sprite_x - self.cameraX, sprite_y - self.cameraY)))                              ## If it's in view it will draw to screen
+        
+        self.screen.blits(self.visible_sprites)
         
         
         if self.debug == True:
@@ -450,7 +486,7 @@ class engine():
         self.player.update()
 
     def run(self):
-        self.screen.fill("green")
+        self.screen.fill("black")
 
         for event in pygame.event.get():
 

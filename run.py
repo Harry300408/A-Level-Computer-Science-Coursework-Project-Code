@@ -5,6 +5,8 @@ from NOQA.engine import *
 if __name__ == "__main__":
     window_configs = window_configs_setup()
     game_engine = engine(window_configs, game_lang_load())
+    
+    game_engine.create_new_world_data()
 
     while True:
         if game_engine.menu_state == "start_menu":

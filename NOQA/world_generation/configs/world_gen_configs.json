@@ -1,9 +1,7 @@
 {
     "window": {
-        "width": 1000,
-        "height": 1000,
-        "scale": 1,
-        "caption": "Island World Gen"
+        "width": 250,
+        "height": 250
     },
 
     "generation": {
