@@ -77,7 +77,7 @@ class CC(pygame.sprite.Sprite): # Character Controller
                 self.attack_cooldown = 1
                 
         
-        self.frame += 0.2
+        self.frame += 0.1
         
         if self.state == "idle":
             if self.frame > 11:
