@@ -9,6 +9,7 @@ from pygame_widgets.dropdown import Dropdown
 
 from NOQA.tiles.base_tile import *
 from NOQA.tiles.liquid.base_liquid import *
+from NOQA.tiles.liquid.deep_water import *
 from NOQA.tiles.terrain.grassland import *
 
 from NOQA.assets.base_asset import *
@@ -226,8 +227,8 @@ class engine():
         self.slide_num = random.randint(0, len(self.Bgs) - 1)
         
         self.create_new_world_data()
-        self.screen_width = 1280
-        self.screen_height = 720
+        self.screen_width = self.XRes
+        self.screen_height = self.YRes
         
         CC([self.player, self.render_items])
         
@@ -351,66 +352,65 @@ class engine():
                 
                 if j['type'] == "grassland":
                     Grassland([self.floor_tiles, self.world], ((j['pos'][0] * 32) - (width_offset), (j['pos'][1] * 32) - (height_offset)))
+                    
+                if j['type'] == "deep_water":
+                    Deep_Water([self.floor_tiles, self.world], ((j['pos'][0] * 32) - (width_offset), (j['pos'][1] * 32) - (height_offset)))
                 
 
     def render(self):
-        self.render_items = sorted(self.render_items, key=operator.attrgetter("hitbox.bottom"))
-   
-        ## Boundries for 'visible'
-        left_bound = self.cameraX                                                                                               ## Left boundry
-        right_bound = self.cameraX + self.screen_width                                                                          ## Right boundry
-        top_bound = self.cameraY                                                                                                ## Top boundry
-        bottom_bound = self.cameraY + self.screen_height                                                                        ## Bottom boundry
-        
-        self.visible_sprites = []
-        
-        for sprite in self.floor_tiles:                                                                                        ## Loops through sprites in group
-            sprite_x, sprite_y = sprite.rect.topleft                                                                            ## Gets sprite position
+        # Clear frame
+        self.screen.fill("black")
 
-            # Check if tile is within the visible area
-            if left_bound - self.tile_size < sprite_x < right_bound and top_bound - self.tile_size < sprite_y < bottom_bound:   ## Fancy calculation to see if it's in view
-                self.visible_sprites.append((sprite.image, (sprite_x - self.cameraX, sprite_y - self.cameraY)))                              ## If it's in view it will draw to screen
-        
-        for i in self.floor_tiles:
-            self.screen.blit(i.image, (i.rect.x, i.rect.y))
-            
-        for sprite in self.render_items:                                                                                        ## Loops through sprites in group
-            sprite_x, sprite_y = sprite.rect.topleft                                                                            ## Gets sprite position
+        # Screen-space visible area
+        screen_rect = pygame.Rect(0, 0, self.screen_width, self.screen_height)
 
-            # Check if tile is within the visible area
-            if left_bound - self.tile_size < sprite_x < right_bound and top_bound - self.tile_size < sprite_y < bottom_bound:   ## Fancy calculation to see if it's in view
-                self.visible_sprites.append((sprite.image, (sprite_x - self.cameraX, sprite_y - self.cameraY)))                              ## If it's in view it will draw to screen
-        
-        self.screen.blits(self.visible_sprites)
-        
-        
-        if self.debug == True:
+        # Small padding so tiles at the edge do not pop in too early/late
+        cull_rect = screen_rect.inflate(self.tile_size * 2, self.tile_size * 2)
+
+        # Fresh list every frame
+        visible_sprites = []
+
+        # Draw floor first
+        for sprite in self.floor_tiles:
+            if sprite.rect.colliderect(cull_rect):
+                visible_sprites.append((sprite.image, sprite.rect.topleft))
+
+        # Sort renderable sprites by depth
+        sorted_render_items = sorted(self.render_items, key=operator.attrgetter("hitbox.bottom"))
+
+        # Draw only visible render items
+        for sprite in sorted_render_items:
+            if sprite.rect.colliderect(cull_rect):
+                visible_sprites.append((sprite.image, sprite.rect.topleft))
+
+        # Batch draw visible sprites only
+        self.screen.blits(visible_sprites)
+
+        if self.debug:
             debug404(
-
                 [
-                    f"ALONE: No Rescue | vDev-Kit 0.1 pre-Alpha", 
-                    f"FPS: {int(self.clock.get_fps())}", 
+                    f"ALONE: No Rescue | vDev-Kit 0.1 pre-Alpha",
+                    f"FPS: {int(self.clock.get_fps())}",
                     f"Cursor XY: {self.cusror.location[0]} / {self.cusror.location[1]}",
-                    f"Player State: {self.player.sprites()[0].state}", 
-                    f"Player Direction: {self.player.sprites()[0].direction}", 
+                    f"Player State: {self.player.sprites()[0].state}",
+                    f"Player Direction: {self.player.sprites()[0].direction}",
                     f"Player Held Item: {self.player.sprites()[0].held_item}",
                     f"Player Attack Cooldown: {round(self.player.sprites()[0].attack_cooldown, 2)}",
                     f"Func Cooldown: {self.f_cooldown}",
                     f"Show Hitboxes: {self.show_hitboxes}"
                 ]
-                
-                )
-        
-        if self.show_hitboxes == True:
-            for i in self.render_items:
-                try:
-                    pygame.draw.rect(self.screen, (255, 0, 0), i.hitbox, 1)
-                    pygame.draw.rect(self.screen, (0, 0, 255), i.attack_box, 1)
-                except:
-                    pass
-        
-        self.cusror.draw()
-            
+            )
+
+        if self.show_hitboxes:
+            for sprite in sorted_render_items:
+                if sprite.rect.colliderect(cull_rect):
+                    try:
+                        pygame.draw.rect(self.screen, (255, 0, 0), sprite.hitbox, 1)
+                        pygame.draw.rect(self.screen, (0, 0, 255), sprite.attack_box, 1)
+                    except:
+                        pass
+
+        self.cusror.draw()      
         
     def game_updates(self):
         self.cusror.update()
@@ -465,7 +465,6 @@ class engine():
         for i in self.world:
             try:
                 if i.hitbox.colliderect(self.player.sprites()[0].hitbox) and i._isSolid == True:
-                    
                     if self.player.sprites()[0].direction == "up":
                         for j in self.world:
                             j.rect.y -= 5
@@ -480,9 +479,9 @@ class engine():
                             j.rect.x += 5
             except:
                 pass
-            
+
             i.update()
-        
+
         self.player.update()
 
     def run(self):
