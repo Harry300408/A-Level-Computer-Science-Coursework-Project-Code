@@ -1,7 +1,7 @@
 {
     "window": {
-        "width": 1500,
-        "height": 1500
+        "width": 500,
+        "height": 500
     },
 
     "generation": {
@@ -95,7 +95,7 @@
         "trees": {
             "enabled": true,
             "per_biome_density": {
-                "forest": 0.42,
+                "forest": 0.30,
                 "grassland": 0.06,
                 "swamp": 0.10,
                 "savanna": 0.05,

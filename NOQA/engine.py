@@ -327,11 +327,20 @@ class engine:
         self.chunk_size = 10
 
         self.floor_chunks = {}
+        self.object_chunks = {}
 
         self.create_new_world_data()
 
         # Create player after world
         CC([self.player, self.render_items])
+
+    def get_world_view_rect(self):
+        return pygame.Rect(
+            self.cameraX,
+            self.cameraY,
+            self.screen_width,
+            self.screen_height
+        )
 
     def get_player_sprite(self):
         sprites = self.player.sprites()
@@ -348,8 +357,13 @@ class engine:
 
         return player.rect.move(self.cameraX, self.cameraY)
 
-    def get_world_view_rect(self):
-        return pygame.Rect(self.cameraX, self.cameraY, self.screen_width, self.screen_height)
+    def get_player_world_hitbox(self):
+        player = self.get_player_sprite()
+        if player is None:
+            return None
+
+        base_hitbox = player.hitbox if hasattr(player, "hitbox") else player.rect
+        return base_hitbox.move(self.cameraX, self.cameraY)
 
     def get_nearby_tiles(self, world_x, world_y, radius=2):
         tile_x = int((world_x + self.world_width_offset) // self.tile_size)
@@ -363,31 +377,58 @@ class engine:
                     nearby.append(tile)
         return nearby
 
+    def get_nearby_objects(self, world_x, world_y, radius=2):
+        tile_x = int((world_x + self.world_width_offset) // self.tile_size)
+        tile_y = int((world_y + self.world_height_offset) // self.tile_size)
+
+        nearby = []
+        seen = set()
+
+        for y in range(tile_y - radius, tile_y + radius + 1):
+            for x in range(tile_x - radius, tile_x + radius + 1):
+                chunk_key = self.get_chunk_key_from_tile(x, y)
+                chunk = self.object_chunks.get(chunk_key)
+
+                if not chunk:
+                    continue
+
+                for obj in chunk:
+                    obj_id = id(obj)
+                    if obj_id not in seen:
+                        nearby.append(obj)
+                        seen.add(obj_id)
+
+        return nearby
+    
     def can_move_to(self, new_camera_x, new_camera_y):
-        """
-        Checks solid collisions near the player only.
-        """
         player = self.get_player_sprite()
         if player is None:
             return True
 
-        if hasattr(player, "hitbox"):
-            future_player_hitbox = player.hitbox.move(new_camera_x, new_camera_y)
-            center_x = future_player_hitbox.centerx
-            center_y = future_player_hitbox.centery
-        else:
-            future_player_hitbox = player.rect.move(new_camera_x, new_camera_y)
-            center_x = future_player_hitbox.centerx
-            center_y = future_player_hitbox.centery
+        base_hitbox = player.hitbox if hasattr(player, "hitbox") else player.rect
+        future_player_hitbox = base_hitbox.move(new_camera_x, new_camera_y)
 
+        center_x = future_player_hitbox.centerx
+        center_y = future_player_hitbox.centery
+
+        # Check nearby solid tiles
         nearby_tiles = self.get_nearby_tiles(center_x, center_y, radius=2)
-
         for tile in nearby_tiles:
             try:
                 tile_hitbox = tile.hitbox if hasattr(tile, "hitbox") else tile.rect
                 if getattr(tile, "_isSolid", False) and tile_hitbox.colliderect(future_player_hitbox):
                     return False
-            except:
+            except Exception:
+                pass
+
+        # Check nearby solid objects
+        nearby_objects = self.get_nearby_objects(center_x, center_y, radius=2)
+        for obj in nearby_objects:
+            try:
+                obj_hitbox = obj.hitbox if hasattr(obj, "hitbox") else obj.rect
+                if getattr(obj, "_isSolid", False) and obj_hitbox.colliderect(future_player_hitbox):
+                    return False
+            except Exception:
                 pass
 
         return True
@@ -424,6 +465,59 @@ class engine:
                     visible_chunks.append(chunk)
 
         return visible_chunks
+
+    def add_object_to_chunk(self, obj):
+        if not hasattr(obj, "rect"):
+            return
+
+        left_tile = int((obj.rect.left + self.world_width_offset) // self.tile_size)
+        right_tile = int((obj.rect.right + self.world_width_offset) // self.tile_size)
+        top_tile = int((obj.rect.top + self.world_height_offset) // self.tile_size)
+        bottom_tile = int((obj.rect.bottom + self.world_height_offset) // self.tile_size)
+
+        left_chunk = left_tile // self.chunk_size
+        right_chunk = right_tile // self.chunk_size
+        top_chunk = top_tile // self.chunk_size
+        bottom_chunk = bottom_tile // self.chunk_size
+
+        for cy in range(top_chunk, bottom_chunk + 1):
+            for cx in range(left_chunk, right_chunk + 1):
+                chunk_key = (cx, cy)
+
+                if chunk_key not in self.object_chunks:
+                    self.object_chunks[chunk_key] = []
+
+                self.object_chunks[chunk_key].append(obj)
+
+    def get_visible_object_chunks(self, cull_rect):
+        left_tile = int((cull_rect.left + self.world_width_offset) // self.tile_size)
+        right_tile = int((cull_rect.right + self.world_width_offset) // self.tile_size)
+        top_tile = int((cull_rect.top + self.world_height_offset) // self.tile_size)
+        bottom_tile = int((cull_rect.bottom + self.world_height_offset) // self.tile_size)
+
+        left_chunk = left_tile // self.chunk_size
+        right_chunk = right_tile // self.chunk_size
+        top_chunk = top_tile // self.chunk_size
+        bottom_chunk = bottom_tile // self.chunk_size
+
+        visible_chunks = []
+
+        for cy in range(top_chunk, bottom_chunk + 1):
+            for cx in range(left_chunk, right_chunk + 1):
+                chunk = self.object_chunks.get((cx, cy))
+                if chunk:
+                    visible_chunks.append(chunk)
+
+        return visible_chunks
+
+    def get_object_screen_rect(self, obj):
+        return obj.rect.move(-self.cameraX, -self.cameraY)
+
+    def is_object_visible(self, obj, cull_rect):
+        if not hasattr(obj, "rect"):
+            return False
+
+        return obj.rect.colliderect(cull_rect)
 
     def main_menu(self):
         self.slide_num += 0.001
@@ -545,9 +639,15 @@ class engine:
         self.tile_lookup.clear()
         self.floor_chunks.clear()
 
+        self.object_chunks = {}
+
         self.floor_tiles.empty()
         self.world.empty()
+        self.assets.empty()
+        self.resources.empty()
+        self.scenery.empty()
 
+        # Build floor / terrain
         for row in world_data:
             for j in row:
                 tile_x = j["pos"][0]
@@ -575,49 +675,49 @@ class engine:
                         [self.floor_tiles, self.world],
                         (world_x, world_y),
                     )
-                
+
                 elif j["type"] == "beach":
                     tile = Beach(
                         [self.floor_tiles, self.world],
                         (world_x, world_y),
                     )
-                
+
                 elif j["type"] == "forest":
                     tile = Forest(
                         [self.floor_tiles, self.world],
                         (world_x, world_y),
                     )
-                
+
                 elif j["type"] == "swamp":
                     tile = Swamp(
                         [self.floor_tiles, self.world],
                         (world_x, world_y),
                     )
-                
+
                 elif j["type"] == "savanna":
                     tile = Savanna(
                         [self.floor_tiles, self.world],
                         (world_x, world_y),
                     )
-                
+
                 elif j["type"] == "desert":
                     tile = Desert(
                         [self.floor_tiles, self.world],
                         (world_x, world_y),
                     )
-                
+
                 elif j["type"] == "hill":
                     tile = Hill(
                         [self.floor_tiles, self.world],
                         (world_x, world_y),
                     )
-                    
+
                 elif j["type"] == "mountain":
                     tile = Mountain(
                         [self.floor_tiles, self.world],
                         (world_x, world_y),
                     )
-                
+
                 elif j["type"] == "snow":
                     tile = Snow(
                         [self.floor_tiles, self.world],
@@ -628,9 +728,37 @@ class engine:
                     self.tile_lookup[(tile_x, tile_y)] = tile
                     self.add_floor_tile_to_chunk(tile_x, tile_y, tile)
 
+        # Build objects / assets from obj_data
+        # Build objects / assets from obj_data
+        for row in obj_data:
+            for j in row:
+                if j["type"] is None:
+                    continue
+
+                tile_x = j["pos"][0]
+                tile_y = j["pos"][1]
+
+                world_x = (tile_x * self.tile_size) - self.world_width_offset
+                world_y = (tile_y * self.tile_size) - self.world_height_offset
+
+                obj = None
+
+                if j["type"] == "tree":
+                    obj = L_Tree(
+                        [self.assets, self.scenery, self.render_items],
+                        (world_x, world_y + self.tile_size),
+                    )
+
+                if obj is not None:
+                    try:
+                        obj.update()
+                    except Exception:
+                        pass
+
+                    self.add_object_to_chunk(obj)
+
         self.cameraX = -self.screen_width // 2
         self.cameraY = -self.screen_height // 2
-
 
     def render(self):
         self.screen.fill("black")
@@ -638,13 +766,13 @@ class engine:
         view_rect = self.get_world_view_rect()
         cull_rect = view_rect.inflate(self.tile_size * 2, self.tile_size * 2)
 
-        visible_sprites = []
+        visible_floor_blits = []
+        visible_entities = []
 
         player = self.get_player_sprite()
 
         # Floor first
         visible_floor_chunks = self.get_visible_floor_chunks(cull_rect)
-
         for chunk in visible_floor_chunks:
             for sprite in chunk:
                 if sprite.rect.colliderect(cull_rect):
@@ -654,30 +782,60 @@ class engine:
                     )
 
                     if hasattr(sprite, "frames"):
-                        visible_sprites.append((sprite.frames[self.water_anim_frame], draw_pos))
+                        visible_floor_blits.append(
+                            (sprite.frames[self.water_anim_frame], draw_pos)
+                        )
                     else:
-                        visible_sprites.append((sprite.image, draw_pos))
+                        visible_floor_blits.append((sprite.image, draw_pos))
 
-        world_render_items = [s for s in self.render_items if s != player]
+        if visible_floor_blits:
+            self.screen.blits(visible_floor_blits)
 
-        sorted_render_items = sorted(
-            world_render_items,
-            key=lambda spr: getattr(getattr(spr, "hitbox", spr.rect), "bottom", spr.rect.bottom),
-        )
+        # Visible world objects only, using full image rect
+        visible_object_chunks = self.get_visible_object_chunks(cull_rect)
+        seen = set()
 
-        for sprite in sorted_render_items:
-            if sprite.rect.colliderect(cull_rect):
-                draw_pos = (
-                    sprite.rect.x - self.cameraX,
-                    sprite.rect.y - self.cameraY,
-                )
-                visible_sprites.append((sprite.image, draw_pos))
+        for chunk in visible_object_chunks:
+            for sprite in chunk:
+                sprite_id = id(sprite)
+                if sprite_id in seen:
+                    continue
+                seen.add(sprite_id)
 
-        if visible_sprites:
-            self.screen.blits(visible_sprites)
+                if self.is_object_visible(sprite, cull_rect):
+                    sort_rect = sprite.hitbox if hasattr(sprite, "hitbox") else sprite.rect
+                    visible_entities.append(
+                        (
+                            getattr(sort_rect, "bottom", sprite.rect.bottom),
+                            sprite.image,
+                            (
+                                sprite.rect.x - self.cameraX,
+                                sprite.rect.y - self.cameraY,
+                            ),
+                            sprite,
+                        )
+                    )
 
+        # Add player into same Y-sort pass
         if player is not None:
-            self.screen.blit(player.image, player.rect.topleft)
+            player_world_hitbox = self.get_player_world_hitbox()
+            player_sort_bottom = (
+                player_world_hitbox.bottom if player_world_hitbox is not None else player.rect.bottom
+            )
+
+            visible_entities.append(
+                (
+                    player_sort_bottom,
+                    player.image,
+                    player.rect.topleft,
+                    player,
+                )
+            )
+
+        visible_entities.sort(key=lambda item: item[0])
+
+        if visible_entities:
+            self.screen.blits([(img, pos) for _, img, pos, _ in visible_entities])
 
         if self.debug and player is not None:
             debug404(
@@ -686,7 +844,8 @@ class engine:
                     f"FPS: {int(self.clock.get_fps())}",
                     f"Cursor XY: {self.cusror.location[0]} / {self.cusror.location[1]}",
                     f"Camera XY: {round(self.cameraX, 2)} / {round(self.cameraY, 2)}",
-                    f"Visible Sprites: {len(visible_sprites)}",
+                    f"Visible Floor: {len(visible_floor_blits)}",
+                    f"Visible Entities: {len(visible_entities)}",
                     f"Player State: {getattr(player, 'state', 'N/A')}",
                     f"Player Direction: {getattr(player, 'direction', 'N/A')}",
                     f"Player Held Item: {getattr(player, 'held_item', 'N/A')}",
@@ -697,8 +856,6 @@ class engine:
             )
 
         if self.show_hitboxes:
-            visible_floor_chunks = self.get_visible_floor_chunks(cull_rect)
-
             for chunk in visible_floor_chunks:
                 for sprite in chunk:
                     if sprite.rect.colliderect(cull_rect):
@@ -708,28 +865,33 @@ class engine:
                         except Exception:
                             pass
 
-            for sprite in sorted_render_items:
-                if sprite.rect.colliderect(cull_rect):
+            for _, _, _, sprite in visible_entities:
+                if sprite == player:
                     try:
-                        hitbox = sprite.hitbox.move(-self.cameraX, -self.cameraY)
-                        pygame.draw.rect(self.screen, (255, 0, 0), hitbox, 1)
+                        pygame.draw.rect(self.screen, (0, 255, 0), player.hitbox, 1)
                     except Exception:
                         pass
+                    continue
 
-                    try:
-                        attack_box = sprite.attack_box.move(-self.cameraX, -self.cameraY)
-                        pygame.draw.rect(self.screen, (0, 0, 255), attack_box, 1)
-                    except Exception:
-                        pass
-
-            if player is not None:
                 try:
-                    pygame.draw.rect(self.screen, (0, 255, 0), player.hitbox, 1)
+                    image_rect = sprite.rect.move(-self.cameraX, -self.cameraY)
+                    pygame.draw.rect(self.screen, (255, 255, 0), image_rect, 1)
+                except Exception:
+                    pass
+
+                try:
+                    hitbox = sprite.hitbox.move(-self.cameraX, -self.cameraY)
+                    pygame.draw.rect(self.screen, (255, 0, 0), hitbox, 1)
+                except Exception:
+                    pass
+
+                try:
+                    attack_box = sprite.attack_box.move(-self.cameraX, -self.cameraY)
+                    pygame.draw.rect(self.screen, (0, 0, 255), attack_box, 1)
                 except Exception:
                     pass
 
         self.cusror.draw()
-
 
     def game_updates(self):
         self.cusror.update()
@@ -738,10 +900,12 @@ class engine:
         if self.f_cooldown < 0:
             self.f_cooldown = 0
 
-        player = self.get_player_sprite()
         keys = pygame.key.get_pressed()
 
-        ## DEBUG KEYS ##
+        if keys[pygame.K_ESCAPE]:
+            pygame.quit()
+            sys.exit()
+
         if keys[pygame.K_F1] and self.f_cooldown <= 0:
             self.debug = not self.debug
             self.f_cooldown = 1
@@ -760,16 +924,26 @@ class engine:
             pygame.image.save(self.screen, f"screenshots/screenshot{count}.png")
             self.f_cooldown = 1
 
-        # Update dynamic entities only.
-        # Do not update every floor tile; that is expensive and usually unnecessary.
         player = self.get_player_sprite()
 
-        for sprite in self.render_items:
-            if sprite != player:
-                try:
-                    sprite.update()
-                except Exception:
-                    pass
+        view_rect = self.get_world_view_rect()
+        cull_rect = view_rect.inflate(self.tile_size * 2, self.tile_size * 2)
+
+        visible_object_chunks = self.get_visible_object_chunks(cull_rect)
+        seen = set()
+
+        for chunk in visible_object_chunks:
+            for sprite in chunk:
+                sprite_id = id(sprite)
+                if sprite_id in seen:
+                    continue
+                seen.add(sprite_id)
+
+                if self.is_object_visible(sprite, cull_rect):
+                    try:
+                        sprite.update()
+                    except Exception:
+                        pass
 
         self.player.update()
 
@@ -781,15 +955,11 @@ class engine:
         if player is None:
             return
 
-        ## NON DEBUG KEYS ##
         move_x = 0
         move_y = 0
         speed = 5
 
-        player = self.get_player_sprite()
-
-        if player and player.state not in ["hit", "death"] and player.attack_cooldown <= 0:
-
+        if player.state not in ["hit", "death"] and player.attack_cooldown <= 0:
             if keys[pygame.K_w] or keys[pygame.K_UP]:
                 move_y -= 1
             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
@@ -799,7 +969,6 @@ class engine:
             if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
                 move_x += 1
 
-            # Normalize diagonal movement
             if move_x != 0 or move_y != 0:
                 length = (move_x ** 2 + move_y ** 2) ** 0.5
                 move_x = (move_x / length) * speed
@@ -811,8 +980,6 @@ class engine:
                 if self.can_move_to(new_camera_x, new_camera_y):
                     self.cameraX = new_camera_x
                     self.cameraY = new_camera_y
-
-
 
     def run(self):
         self.screen.fill("black")
