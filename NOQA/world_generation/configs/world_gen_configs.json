@@ -1,7 +1,7 @@
 {
     "window": {
-        "width": 500,
-        "height": 500
+        "width": 250,
+        "height": 250
     },
 
     "generation": {
@@ -95,9 +95,9 @@
         "trees": {
             "enabled": true,
             "per_biome_density": {
-                "forest": 0.30,
+                "forest": 0.15,
                 "grassland": 0.06,
-                "swamp": 0.10,
+                "swamp": 0.07,
                 "savanna": 0.05,
                 "hill": 0.03
             },
@@ -106,23 +106,28 @@
         "bushes": {
             "enabled": true,
             "per_biome_density": {
-                "forest": 0.12,
-                "grassland": 0.07,
-                "swamp": 0.10,
-                "savanna": 0.08,
+                "forest": 0.05,
+                "grassland": 0.10,
                 "desert": 0.02,
-                "hill": 0.04
+                "hill": 0.15
             },
             "color": [ 35, 85, 35 ]
         },
         "grass": {
             "enabled": true,
             "per_biome_density": {
-                "grassland": 0.18,
+                "grassland": 0.28,
                 "forest": 0.08,
-                "savanna": 0.14
+                "hill": 0.10
             },
             "color": [ 95, 200, 110 ]
+        },
+        "cactus": {
+            "enabled": true,
+            "per_biome_density": {
+                "desert": 0.10
+            },
+            "color": [ 97, 250, 31 ]
         }
     },
 
@@ -139,7 +144,8 @@
                 "max_height": 0.98,
                 "per_biome_density": {
                     "hill": 0.06,
-                    "mountain": 0.08
+                    "mountain": 0.08,
+                    "snow": 0.12
                 }
             },
             {
@@ -149,7 +155,8 @@
                 "max_height": 0.98,
                 "per_biome_density": {
                     "hill": 0.04,
-                    "mountain": 0.05
+                    "mountain": 0.05,
+                    "snow": 0.09
                 }
             },
             {
@@ -158,7 +165,8 @@
                 "min_height": 0.80,
                 "max_height": 0.98,
                 "per_biome_density": {
-                    "mountain": 0.015
+                    "mountain": 0.1,
+                    "snow": 0.2
                 }
             }
         ]
@@ -167,7 +175,7 @@
     "export": {
         "auto_save_json": false,
         "json_path": "latest_map.json",
-        "print_to_console": true,
+        "print_to_console": false,
         "pretty_print": false
     }
 }

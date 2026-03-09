@@ -393,6 +393,7 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
     trees_mask = np.zeros((H, W), dtype=bool)  # Where trees should be placed
     bushes_mask = np.zeros((H, W), dtype=bool)  # Where bushes should be placed
     grass_mask = np.zeros((H, W), dtype=bool)  # Where grass should be placed
+    cactus_mask = np.zeros((H, W), dtype=bool)
 
     if dec.get("trees", {}).get("enabled", True):  # If trees decorator enabled
         tdens = dec["trees"].get("per_biome_density", {})  # Per-biome tree density map
@@ -405,6 +406,10 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
     if dec.get("grass", {}).get("enabled", True):  # If grass decorator enabled
         gdens = dec["grass"].get("per_biome_density", {})  # Per-biome grass density map
         grass_mask = place_decorators(biome, rng_dec, gdens, decorator_noise)  # Compute placement mask
+    
+    if dec.get("cactus", {}).get("enabled", True):
+        cdens = dec["cactus"].get("per_biome_density", {})
+        cactus_mask = place_decorators(biome, rng_dec, cdens, decorator_noise)
 
     ores_cfg = cfg.get("ores", {})  # Ores config section
     ore_masks: Dict[str, np.ndarray] = {}  # Map ore name -> placement mask
@@ -427,6 +432,8 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
     obj_type[grass_mask] = "grass"  # Assign grass objects to tiles in grass_mask
     obj_type[bushes_mask] = "bush"  # Assign bush objects (overwrites grass if overlapping)
     obj_type[trees_mask] = "tree"  # Assign tree objects (overwrites bush/grass if overlapping)
+    obj_type[cactus_mask] = "cactus"
+
     for ore_name, m in ore_masks.items():  # Assign ore objects for each ore type
         obj_type[m] = ore_name  # Ores overwrite any prior decorator where they overlap
 
