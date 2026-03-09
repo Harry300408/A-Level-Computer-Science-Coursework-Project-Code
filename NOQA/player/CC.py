@@ -75,12 +75,13 @@ class CC(pygame.sprite.Sprite):
         self.clamp_stats()
 
     def take_damage(self, amount):
-        self.hp -= amount
-        self.state = 'hit'
-        self.frame = 0
-        self.clamp_stats()
+        if self.state != 'death':
+            self.hp -= amount
+            self.state = 'hit'
+            self.frame = 0
+            self.clamp_stats()
 
-        if self.hp <= 0:
+        if self.hp <= 0 and self.state != 'death':
             self.hp = 0
             self.state = 'death'
             self.frame = 0
