@@ -451,7 +451,7 @@ class engine:
         for tile in nearby_tiles:
             try:
                 tile_hitbox = tile.hitbox if hasattr(tile, 'hitbox') else tile.rect
-                blocked = getattr(tile, '_isSolid', False) or getattr(tile, '_tile_type', '') in {'deep_water', 'shallow_water'}
+                blocked = getattr(tile, '_isSolid', False) or getattr(tile, '_tile_type', '') in {'deep_water'}
                 if blocked and tile_hitbox.colliderect(future_player_hitbox):
                     return False
             except Exception:

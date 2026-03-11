@@ -14,9 +14,9 @@ class EnemyAI(BaseEntity):
             entity_type='enemy',
             max_hp=45,
             move_speed=1.8,
-            attack_damage=10,
-            attack_range=28,
-            attack_cooldown_max=2.0,
+            attack_damage=5,
+            attack_range=50,
+            attack_cooldown_max=3.0,
             heal_on_kill=12,
             solid=True,
         )
