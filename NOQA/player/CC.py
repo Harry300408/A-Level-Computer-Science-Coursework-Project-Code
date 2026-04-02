@@ -21,8 +21,8 @@ class CC(pygame.sprite.Sprite):
         self._max_stamina = 200
         self._min_stamina = 0
 
-        self.walk_speed = 5
-        self.sprint_speed = 8
+        self.walk_speed = 4
+        self.sprint_speed = self.walk_speed * 1.5
         self.is_sprinting = False
         self.sprint_drain = 1
         self.walk_stamina_regen = 0.25

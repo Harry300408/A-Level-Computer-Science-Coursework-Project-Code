@@ -6,5 +6,10 @@
         "fps": 60
     },
 
+    "audio_defaults": {
+        "music_volume": 100,
+        "sfx_volume": 100
+    },
+
     "language": "en"
 }

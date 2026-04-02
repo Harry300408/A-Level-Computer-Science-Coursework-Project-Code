@@ -15,13 +15,13 @@ class EnemyAI(BaseEntity):
             max_hp=45,
             move_speed=1.8,
             attack_damage=5,
-            attack_range=50,
+            attack_range=28,
             attack_cooldown_max=3.0,
             heal_on_kill=12,
             solid=True,
         )
 
-        self.view_radius = 220
+        self.view_radius = 400
         self.stop_radius = 34
         self.path = []
         self.path_refresh_timer = 0
@@ -41,6 +41,10 @@ class EnemyAI(BaseEntity):
 
         player_x, player_y = player_hitbox.center
         dist_to_player = self.distance_to(player_x, player_y)
+        goal_pos = engine.resolve_ai_goal_world_pos(
+            (player_x, player_y),
+            ignore_entity=self,
+        )
 
         self.face_towards(player_x, player_y)
 
@@ -54,12 +58,27 @@ class EnemyAI(BaseEntity):
             self.path.clear()
             return
 
+        if goal_pos is None:
+            self.state = 'idle'
+            self.path.clear()
+            self.attack_player_if_possible(player, player_hitbox)
+            return
+
+        goal_x, goal_y = goal_pos
+        dist_to_goal = self.distance_to(goal_x, goal_y)
+
+        if dist_to_goal <= self.stop_radius:
+            self.state = 'idle'
+            self.path.clear()
+            self.attack_player_if_possible(player, player_hitbox)
+            return
+
         self.path_refresh_timer -= 1
 
         if self.path_refresh_timer <= 0 or not self.path:
             self.path = engine.find_path(
                 (self.world_x, self.world_y),
-                (player_x, player_y),
+                (goal_x, goal_y),
                 ignore_entity=self,
                 max_nodes=1200,
             )
@@ -75,4 +94,4 @@ class EnemyAI(BaseEntity):
                 if not moved:
                     self.path_refresh_timer = 0
         else:
-            self.move_towards(player_x, player_y, self.move_speed, engine)
+            self.move_towards(goal_x, goal_y, self.move_speed, engine)

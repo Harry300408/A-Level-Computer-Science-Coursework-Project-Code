@@ -15,6 +15,7 @@ from screeninfo import get_monitors
 
 import pygame_widgets
 from pygame_widgets.dropdown import Dropdown
+from pygame_widgets.widget import WidgetHandler
 
 from NOQA.tiles.base_tile import *
 from NOQA.tiles.terrain.grassland import Grassland
@@ -47,35 +48,54 @@ from NOQA.ui.buttons._base_button import *
 from NOQA.ui.switch._base_switch import *
 from NOQA.ui.slider._base_slider import *
 from NOQA.debug404.debug import debug404
+from NOQA.settings_handling import load_settings, save_settings, settings_to_window_configs
 
 from NOQA.world_generation.world_gen import generate_world_data
 
 
 class engine:
-    def __init__(self, configs, LANG):
-        self.XRes: int = int(configs[0])
-        self.YRes: int = int(configs[1])
-        self.FULLSCREEN = configs[2]
-        self.FPS: int = int(configs[3])
+    def __init__(self, configs, LANG, settings=None):
+        # Clear stale pygame_widgets entries before rebuilding the window/UI.
+        WidgetHandler.getWidgets().clear()
+
+        self.settings = (
+            load_settings()
+            if settings is None
+            else settings.copy()
+        )
+        fullscreen_setting = self.settings.get("fullscreen", configs[2])
+
+        self.XRes: int = int(self.settings.get("xres", configs[0]))
+        self.YRes: int = int(self.settings.get("yres", configs[1]))
+        self.FULLSCREEN = (
+            fullscreen_setting
+            if isinstance(fullscreen_setting, bool)
+            else str(fullscreen_setting).strip().lower() == "true"
+        )
+        self.FPS: int = int(self.settings.get("fps", configs[3]))
         self.dt: float = 0
 
-        self.current_language = LANG
+        self.current_language = self.settings.get("language", LANG)
+        self.music_volume = int(self.settings.get("music_volume", 100))
+        self.sfx_volume = int(self.settings.get("sfx_volume", 100))
+        self.audio_enabled = False
 
         self.debug: bool = True
         self.debug_draw_mode: int = 0
         self.f_cooldown: float = 0
 
         pygame.init()
+        self.setup_audio()
 
-        self.screen: pygame.Surface = pygame.display.set_mode((self.XRes, self.YRes))
+        display_flags = pygame.FULLSCREEN if self.FULLSCREEN else 0
+        self.screen: pygame.Surface = pygame.display.set_mode(
+            (self.XRes, self.YRes),
+            display_flags,
+        )
         pygame.display.set_caption("ALONE: No Rescue | vDev-Kit")
         pygame.display.set_icon(pygame.image.load("gfx/icon/icon.png"))
-
-        if str(self.FULLSCREEN) == "True" or self.FULLSCREEN is True:
-            self.FULLSCREEN = True
-            pygame.display.toggle_fullscreen()
-        else:
-            self.FULLSCREEN = False
+        self.FULLSCREEN = bool(self.FULLSCREEN)
+        self.apply_audio_settings()
 
         self.clock: pygame.time.Clock = pygame.time.Clock()
 
@@ -132,6 +152,30 @@ class engine:
         )
         self.title_txt_rect_outline = self.title_txt_outline.get_rect(
             center=((self.XRes / 2) + 5, 50)
+        )
+
+        self.pause_overlay = pygame.Surface((self.XRes, self.YRes), pygame.SRCALPHA)
+        self.pause_overlay.fill((0, 0, 0, 170))
+        self.pause_panel_rect = pygame.Rect(0, 0, 400, 400)
+        self.pause_panel_rect.center = (self.XRes / 2, self.YRes / 2)
+
+        self.pause_title_font = pygame.font.Font("gfx/fonts/ui/alagard.ttf", 64)
+        self.pause_txt = self.pause_title_font.render("Paused", True, "white")
+        self.pause_txt_rect = self.pause_txt.get_rect(
+            center=(self.XRes / 2, (self.YRes / 2) - 115)
+        )
+
+        self.pause_txt_outline = self.pause_title_font.render("Paused", True, "black")
+        self.pause_txt_rect_outline = self.pause_txt_outline.get_rect(
+            center=((self.XRes / 2) + 4, (self.YRes / 2) - 111)
+        )
+
+        self.pause_hint_font = pygame.font.Font("gfx/fonts/ui/Enhance 1.0.ttf", 24)
+        self.pause_hint_txt = self.pause_hint_font.render(
+            "Press Esc to resume", True, "white"
+        )
+        self.pause_hint_txt_rect = self.pause_hint_txt.get_rect(
+            center=(self.XRes / 2, (self.YRes / 2) - 55)
         )
 
         self.play_button = Button(
@@ -196,6 +240,91 @@ class engine:
 
         self.mm_buttons = [self.exit_button, self.settings_button, self.play_button]
         self.new_load_buttons = [self.newgame_button, self.loadgame_button]
+
+        self.pause_resume_button = Button(
+            (self.XRes / 2, (self.YRes / 2) + 5),
+            "gfx/ui/menus/button/button_bg.png",
+            "gfx/ui/menus/button/button_pressed.png",
+            "Resume",
+            32,
+            (255, 255, 255),
+            (255, 255, 0),
+            "pause_resume_button",
+            "Return to the game.",
+        )
+        self.pause_main_menu_button = Button(
+            (self.XRes / 2, (self.YRes / 2) + 75),
+            "gfx/ui/menus/button/button_bg.png",
+            "gfx/ui/menus/button/button_pressed.png",
+            "Main Menu",
+            32,
+            (255, 255, 255),
+            (255, 255, 0),
+            "pause_main_menu_button",
+            "Leave the current run and return to the start menu.",
+        )
+        self.pause_exit_button = Button(
+            (self.XRes / 2, (self.YRes / 2) + 145),
+            "gfx/ui/menus/button/button_bg.png",
+            "gfx/ui/menus/button/button_pressed.png",
+            "Exit Game",
+            32,
+            (255, 255, 255),
+            (255, 255, 0),
+            "pause_exit_button",
+            "Close the game.",
+        )
+        self.pause_buttons = [
+            self.pause_resume_button,
+            self.pause_main_menu_button,
+            self.pause_exit_button,
+        ]
+
+        self.game_over_overlay = pygame.Surface((self.XRes, self.YRes), pygame.SRCALPHA)
+        self.game_over_overlay.fill((0, 0, 0, 205))
+        self.game_over_panel_rect = pygame.Rect(0, 0, 460, 360)
+        self.game_over_panel_rect.center = (self.XRes / 2, self.YRes / 2)
+
+        self.game_over_title_font = pygame.font.Font("gfx/fonts/ui/alagard.ttf", 68)
+        self.game_over_txt = self.game_over_title_font.render("Game Over", True, "white")
+        self.game_over_txt_rect = self.game_over_txt.get_rect(
+            center=(self.XRes / 2, (self.YRes / 2) - 100)
+        )
+        self.game_over_txt_outline = self.game_over_title_font.render(
+            "Game Over", True, "black"
+        )
+        self.game_over_txt_rect_outline = self.game_over_txt_outline.get_rect(
+            center=((self.XRes / 2) + 4, (self.YRes / 2) - 96)
+        )
+
+        self.game_over_info_font = pygame.font.Font("gfx/fonts/ui/Enhance 1.0.ttf", 26)
+
+        self.game_over_main_menu_button = Button(
+            (self.XRes / 2, (self.YRes / 2) + 45),
+            "gfx/ui/menus/button/button_bg.png",
+            "gfx/ui/menus/button/button_pressed.png",
+            "Main Menu",
+            32,
+            (255, 255, 255),
+            (255, 255, 0),
+            "game_over_main_menu_button",
+            "Return to the start menu.",
+        )
+        self.game_over_exit_button = Button(
+            (self.XRes / 2, (self.YRes / 2) + 115),
+            "gfx/ui/menus/button/button_bg.png",
+            "gfx/ui/menus/button/button_pressed.png",
+            "Quit Game",
+            32,
+            (255, 255, 255),
+            (255, 255, 0),
+            "game_over_exit_button",
+            "Close the game.",
+        )
+        self.game_over_buttons = [
+            self.game_over_main_menu_button,
+            self.game_over_exit_button,
+        ]
 
         self.settings_back_button = Button(
             (150, self.YRes - 50),
@@ -265,10 +394,10 @@ class engine:
             font=pygame.font.Font("gfx/fonts/ui/Enhance 1.0.ttf", 30),
         )
 
-        self.vol_slider = Slider(
+        self.music_slider = Slider(
             ((self.XRes / 2) - 62.5, (self.YRes / 2) - 35),
             (250, 30),
-            0.1,
+            self.music_volume / 100,
             0,
             100,
         )
@@ -276,7 +405,7 @@ class engine:
         self.sfx_slider = Slider(
             ((self.XRes / 2) + 62.5, (self.YRes / 2) + 20),
             (250, 30),
-            0.1,
+            self.sfx_volume / 100,
             0,
             100,
         )
@@ -298,7 +427,7 @@ class engine:
 
         self.settings_buttons = [self.settings_back_button]
         self.settings_switches = [self.fullscreen_TF]
-        self.settings_sliders = [self.vol_slider, self.sfx_slider]
+        self.settings_sliders = [self.music_slider, self.sfx_slider]
 
         self.resolution.hide()
         self.language.hide()
@@ -313,14 +442,14 @@ class engine:
             center=(self.XRes / 2 - 150, self.YRes / 2 - 105)
         )
 
-        self.sfx_txt = self.settings_font.render("SFX", True, "white")
-        self.sfx_txt_rect = self.sfx_txt.get_rect(
-            center=(self.XRes / 2 + 120, self.YRes / 2 - 37)
-        )
-
         self.music_txt = self.settings_font.render("Music", True, "white")
         self.music_txt_rect = self.music_txt.get_rect(
-            center=(self.XRes / 2 - 120, self.YRes / 2 + 17)
+            center=(self.XRes / 2 - 200, self.YRes / 2 - 37)
+        )
+
+        self.sfx_txt = self.settings_font.render("SFX", True, "white")
+        self.sfx_txt_rect = self.sfx_txt.get_rect(
+            center=(self.XRes / 2 + 200, self.YRes / 2 + 17)
         )
 
         count = 0
@@ -342,13 +471,39 @@ class engine:
         self.object_chunks = {}
 
         self.spawnable_land_tiles = []
-        self.ai_spawn_friendly_count = 50
-        self.ai_spawn_enemy_count = 30
 
-        self.create_new_world_data()
+        self.world_gen_config_path = "NOQA/world_generation/configs/world_gen_configs.json"
+        with open(self.world_gen_config_path, "r", encoding="utf-8") as f:
+            self.world_gen_defaults = json.load(f)
+
+        default_window = self.world_gen_defaults.get("window", {})
+        self.max_world_tiles_w = int(default_window.get("width", 500))
+        self.max_world_tiles_h = int(default_window.get("height", 500))
+        self.stage_world_start_w = min(self.max_world_tiles_w, max(72, self.max_world_tiles_w // 5))
+        self.stage_world_start_h = min(self.max_world_tiles_h, max(72, self.max_world_tiles_h // 5))
+        self.stage_world_growth_w = max(18, self.max_world_tiles_w // 14)
+        self.stage_world_growth_h = max(18, self.max_world_tiles_h // 14)
+
+        self.stage_enemy_start = 3
+        self.stage_enemy_growth = 2
+        self.stage_friendly_start = 2
+        self.stage_friendly_growth = 2
+        self.stage_enemy_difficulty_step = 0.05
+        self.stage_enemy_speed_step = 0.0125
+        self.stage_enemy_cooldown_step = 0.01
+
+        self.current_stage = 0
+        self.current_stage_world_size = (0, 0)
+        self.current_stage_enemy_target = 0
+        self.current_stage_friendly_target = 0
+        self.run_in_progress = False
+        self.game_over_world_reached = 0
+        self.game_over_worlds_cleared = 0
 
         ## HUD instantiation ##
         self.HUD_font = pygame.font.Font("gfx/fonts/ui/Enhance 1.0.ttf", 25)
+        self.HUD_info_font = pygame.font.Font("gfx/fonts/ui/Enhance 1.0.ttf", 18)
+        self.AI_status_font = pygame.font.Font("gfx/fonts/ui/Enhance 1.0.ttf", 12)
 
         self.head_box = pygame.image.load("gfx/ui/HUD/head_bg.png").convert_alpha()
         self.head_box_rect = self.head_box.get_rect(bottomleft=(10, self.YRes - 10))
@@ -368,14 +523,279 @@ class engine:
 
         self.stam_text = self.settings_font.render("SP", True, "white")
         self.stam_text_rect = self.stam_text.get_rect(bottomleft=(self.head_box_rect.left + 7.5, self.head_box_rect.top - 195))
+        self.settings_menu_values = self.get_current_settings()
 
-        # Create player after world
-        CC([self.player, self.render_items])
+    def setup_audio(self):
+        try:
+            if not pygame.mixer.get_init():
+                pygame.mixer.init()
 
-        self.spawn_ai_population(
-            friendly_count=self.ai_spawn_friendly_count,
-            enemy_count=self.ai_spawn_enemy_count,
+            if pygame.mixer.get_num_channels() < 8:
+                pygame.mixer.set_num_channels(8)
+
+            self.audio_enabled = True
+        except pygame.error:
+            self.audio_enabled = False
+
+    def apply_audio_settings(self):
+        if not self.audio_enabled or not pygame.mixer.get_init():
+            return
+
+        music_volume = max(0, min(100, int(self.music_volume))) / 100
+        sfx_volume = max(0, min(100, int(self.sfx_volume))) / 100
+
+        pygame.mixer.music.set_volume(music_volume)
+
+        for channel_index in range(pygame.mixer.get_num_channels()):
+            pygame.mixer.Channel(channel_index).set_volume(sfx_volume)
+
+    def get_current_settings(self):
+        return {
+            "xres": int(self.XRes),
+            "yres": int(self.YRes),
+            "fullscreen": bool(self.FULLSCREEN),
+            "fps": int(self.FPS),
+            "language": str(self.current_language),
+            "music_volume": int(self.music_volume),
+            "sfx_volume": int(self.sfx_volume),
+        }
+
+    def set_dropdown_value(self, dropdown, value, fallback_text=None):
+        dropdown.reset()
+
+        if fallback_text is not None:
+            dropdown._Dropdown__main._HeadDropdown__head_text = fallback_text
+
+        for choice in getattr(dropdown, "_Dropdown__choices", []):
+            if choice._value == value:
+                dropdown.chosen = choice
+                return
+
+    def load_settings_into_menu(self):
+        self.settings_menu_values = load_settings()
+
+        self.set_dropdown_value(
+            self.resolution,
+            (
+                self.settings_menu_values["xres"],
+                self.settings_menu_values["yres"],
+            ),
+            fallback_text=(
+                f"Current: {self.settings_menu_values['xres']}"
+                f"x{self.settings_menu_values['yres']}"
+            ),
         )
+        self.set_dropdown_value(
+            self.language,
+            self.settings_menu_values["language"],
+            fallback_text=f"Current: {self.settings_menu_values['language']}",
+        )
+        self.music_slider.set_value(self.settings_menu_values["music_volume"])
+        self.sfx_slider.set_value(self.settings_menu_values["sfx_volume"])
+        self.fullscreen_TF.state = self.settings_menu_values["fullscreen"]
+
+    def get_settings_from_menu(self):
+        loaded_settings = getattr(self, "settings_menu_values", self.get_current_settings())
+
+        resolution = self.resolution.getSelected()
+        language = self.language.getSelected()
+
+        if resolution is None:
+            resolution = (
+                loaded_settings["xres"],
+                loaded_settings["yres"],
+            )
+
+        return {
+            "xres": int(resolution[0]),
+            "yres": int(resolution[1]),
+            "fullscreen": bool(self.fullscreen_TF.state),
+            "fps": int(loaded_settings["fps"]),
+            "language": language if language is not None else loaded_settings["language"],
+            "music_volume": round(self.music_slider.get_value()),
+            "sfx_volume": round(self.sfx_slider.get_value()),
+        }
+
+    def apply_and_exit_settings(self):
+        saved_settings = save_settings(self.get_settings_from_menu())
+        self.__init__(
+            settings_to_window_configs(saved_settings),
+            saved_settings["language"],
+            saved_settings,
+        )
+
+    def reset_run_progression(self):
+        self.current_stage = 0
+        self.current_stage_world_size = (0, 0)
+        self.current_stage_enemy_target = 0
+        self.current_stage_friendly_target = 0
+        self.run_in_progress = False
+        self.game_over_world_reached = 0
+        self.game_over_worlds_cleared = 0
+
+    def get_stage_world_size(self, stage_number):
+        stage_index = max(0, stage_number - 1)
+        world_width = min(
+            self.max_world_tiles_w,
+            self.stage_world_start_w + (stage_index * self.stage_world_growth_w),
+        )
+        world_height = min(
+            self.max_world_tiles_h,
+            self.stage_world_start_h + (stage_index * self.stage_world_growth_h),
+        )
+        return world_width, world_height
+
+    def get_stage_population(self, stage_number):
+        stage_index = max(0, stage_number - 1)
+        friendly_count = self.stage_friendly_start + (stage_index * self.stage_friendly_growth)
+        enemy_count = self.stage_enemy_start + (stage_index * self.stage_enemy_growth)
+        return friendly_count, enemy_count
+
+    def get_stage_difficulty_multiplier(self, stage_number=None):
+        if stage_number is None:
+            stage_number = self.current_stage
+
+        stage_index = max(0, stage_number - 1)
+        return 1.0 + (stage_index * self.stage_enemy_difficulty_step)
+
+    def scale_enemy_for_stage(self, enemy):
+        stage_index = max(0, self.current_stage - 1)
+        difficulty_multiplier = self.get_stage_difficulty_multiplier(self.current_stage)
+
+        enemy.max_hp = max(1, round(enemy.max_hp * difficulty_multiplier))
+        enemy.hp = enemy.max_hp
+        enemy.attack_damage = max(1, round(enemy.attack_damage * difficulty_multiplier))
+        enemy.move_speed *= 1.0 + (stage_index * self.stage_enemy_speed_step)
+        enemy.attack_cooldown_max = max(
+            0.8,
+            enemy.attack_cooldown_max
+            * max(0.6, 1.0 - (stage_index * self.stage_enemy_cooldown_step)),
+        )
+
+    def capture_player_progress(self):
+        player = self.get_player_sprite()
+        if player is None:
+            return None
+
+        return {
+            "hp": player.hp,
+            "stamina": player.stamina,
+            "held_item": getattr(player, "held_item", "sword"),
+            "direction": getattr(player, "direction", "down"),
+        }
+
+    def restore_player_progress(self, player, progress):
+        player.state = "idle"
+        player.frame = 0
+        player.attack_cooldown = 0
+        player.attack_has_hit = False
+        player.is_sprinting = False
+
+        if progress is None:
+            player.update_attack_box()
+            return
+
+        player.hp = progress.get("hp", player.hp)
+        player.stamina = progress.get("stamina", player.stamina)
+        player.held_item = progress.get("held_item", player.held_item)
+        player.direction = progress.get("direction", player.direction)
+        player.clamp_stats()
+        player.update_attack_box()
+
+    def clear_stage_sprites(self):
+        groups_to_clear = [
+            self.player,
+            self.render_items,
+            self.floor_tiles,
+            self.world,
+            self.assets,
+            self.resources,
+            self.scenery,
+            self.AI,
+            self.friendlyAI,
+            self.enemiesAI,
+            self.Static_Items,
+            self.NonStatic_Items,
+        ]
+
+        sprites_to_kill = set()
+        for group in groups_to_clear:
+            sprites_to_kill.update(group.sprites())
+
+        for sprite in sprites_to_kill:
+            sprite.kill()
+
+        for group in groups_to_clear:
+            group.empty()
+
+        self.tile_lookup.clear()
+        self.floor_chunks.clear()
+        self.object_chunks.clear()
+        self.spawnable_land_tiles = []
+
+    def build_stage(self, player_progress=None):
+        world_width, world_height = self.get_stage_world_size(self.current_stage)
+        self.clear_stage_sprites()
+        self.create_new_world_data(world_width, world_height)
+
+        CC([self.player, self.render_items])
+        player = self.get_player_sprite()
+        if player is not None:
+            self.restore_player_progress(player, player_progress)
+
+        friendly_count, enemy_count = self.get_stage_population(self.current_stage)
+        spawned_friendlies, spawned_enemies = self.spawn_ai_population(
+            friendly_count=friendly_count,
+            enemy_count=enemy_count,
+        )
+
+        self.current_stage_world_size = (world_width, world_height)
+        self.current_stage_friendly_target = spawned_friendlies
+        self.current_stage_enemy_target = spawned_enemies
+        self.menu_state = "game"
+
+    def advance_to_next_stage(self):
+        if not self.run_in_progress:
+            return
+
+        player_progress = self.capture_player_progress()
+        if player_progress is None:
+            return
+
+        self.current_stage += 1
+        self.build_stage(player_progress)
+
+    def enter_game_over(self):
+        if self.menu_state == "game_over_menu":
+            return
+
+        self.run_in_progress = False
+        self.game_over_world_reached = max(1, self.current_stage)
+        self.game_over_worlds_cleared = max(0, self.current_stage - 1)
+        self.menu_state = "game_over_menu"
+
+    def prepare_new_game(self):
+        self.reset_run_progression()
+        self.run_in_progress = True
+        self.current_stage = 1
+        self.build_stage()
+
+    def pause_game(self):
+        if self.menu_state == "game":
+            self.menu_state = "pause_menu"
+
+    def resume_game(self):
+        if self.menu_state == "pause_menu":
+            self.menu_state = "game"
+
+    def return_to_main_menu(self):
+        self.clear_stage_sprites()
+        self.reset_run_progression()
+        self.menu_state = "start_menu"
+        self.new_load = False
+        self.mm_buttons = [self.exit_button, self.settings_button, self.play_button]
+        self.resolution.hide()
+        self.language.hide()
 
     def is_on_screen_rect(self, rect):
         screen_rect = pygame.Rect(0, 0, self.screen_width, self.screen_height)
@@ -577,6 +997,41 @@ class engine:
         world_y = (tile_y * self.tile_size) - self.world_height_offset + self.tile_size
         return world_x, world_y
 
+    def is_tile_navigable_for_ai_goal(self, tile_x, tile_y, ignore_entity=None):
+        if tile_x < 0 or tile_y < 0:
+            return False
+
+        if tile_x >= self.world_tiles_w or tile_y >= self.world_tiles_h:
+            return False
+
+        tile = self.tile_lookup.get((tile_x, tile_y))
+        if tile is None:
+            return False
+
+        if getattr(tile, "_isSolid", False) or getattr(tile, "_tile_type", "") in {
+            "deep_water",
+            "shallow_water",
+        }:
+            return False
+
+        tile_rect = pygame.Rect(
+            (tile_x * self.tile_size) - self.world_width_offset,
+            (tile_y * self.tile_size) - self.world_height_offset,
+            self.tile_size,
+            self.tile_size,
+        )
+
+        nearby_objects = self.get_nearby_objects(tile_rect.centerx, tile_rect.centery, radius=1)
+        for obj in nearby_objects:
+            if obj is ignore_entity or getattr(obj, "is_dead", False):
+                continue
+
+            obj_hitbox = obj.hitbox if hasattr(obj, "hitbox") and obj.hitbox is not None else obj.rect
+            if getattr(obj, "_isSolid", False) and obj_hitbox.colliderect(tile_rect):
+                return False
+
+        return True
+
     def is_tile_walkable(self, tile_x, tile_y, ignore_entity=None, consider_player=True):
         if tile_x < 0 or tile_y < 0:
             return False
@@ -619,6 +1074,42 @@ class engine:
                 return False
 
         return True
+
+    def resolve_ai_goal_world_pos(self, goal_world_pos, ignore_entity=None, search_radius=8):
+        goal_tile_x, goal_tile_y = self.world_to_tile(goal_world_pos[0], goal_world_pos[1])
+
+        if self.is_tile_navigable_for_ai_goal(
+            goal_tile_x,
+            goal_tile_y,
+            ignore_entity=ignore_entity,
+        ):
+            return self.tile_to_world_center(goal_tile_x, goal_tile_y)
+
+        for radius in range(1, search_radius + 1):
+            best_tile = None
+            best_score = float("inf")
+
+            for tile_y in range(goal_tile_y - radius, goal_tile_y + radius + 1):
+                for tile_x in range(goal_tile_x - radius, goal_tile_x + radius + 1):
+                    if max(abs(tile_x - goal_tile_x), abs(tile_y - goal_tile_y)) != radius:
+                        continue
+
+                    if not self.is_tile_navigable_for_ai_goal(
+                        tile_x,
+                        tile_y,
+                        ignore_entity=ignore_entity,
+                    ):
+                        continue
+
+                    score = abs(tile_x - goal_tile_x) + abs(tile_y - goal_tile_y)
+                    if score < best_score:
+                        best_score = score
+                        best_tile = (tile_x, tile_y)
+
+            if best_tile is not None:
+                return self.tile_to_world_center(best_tile[0], best_tile[1])
+
+        return None
 
     def can_ai_move_to(self, entity, new_world_x, new_world_y):
         future_hitbox = entity.get_future_hitbox(new_world_x, new_world_y)
@@ -727,10 +1218,13 @@ class engine:
 
     def spawn_ai_population(self, friendly_count=8, enemy_count=5):
         if not self.spawnable_land_tiles:
-            return
+            return 0, 0
 
         available_tiles = self.spawnable_land_tiles.copy()
         random.shuffle(available_tiles)
+
+        spawned_friendlies = 0
+        spawned_enemies = 0
 
         def spawn_entity(entity_cls, groups):
             while available_tiles:
@@ -746,10 +1240,17 @@ class engine:
             return None
 
         for _ in range(friendly_count):
-            spawn_entity(FriendlyAI, [self.AI, self.friendlyAI, self.render_items])
+            entity = spawn_entity(FriendlyAI, [self.AI, self.friendlyAI, self.render_items])
+            if entity is not None:
+                spawned_friendlies += 1
 
         for _ in range(enemy_count):
-            spawn_entity(EnemyAI, [self.AI, self.enemiesAI, self.render_items])
+            entity = spawn_entity(EnemyAI, [self.AI, self.enemiesAI, self.render_items])
+            if entity is not None:
+                self.scale_enemy_for_stage(entity)
+                spawned_enemies += 1
+
+        return spawned_friendlies, spawned_enemies
 
     def main_menu(self):
         self.slide_num += 0.001
@@ -764,30 +1265,47 @@ class engine:
                 pygame.quit()
                 sys.exit()
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                click_pos = event.pos
+                handled_main_menu_click = False
+
                 for i in self.mm_buttons:
-                    if i.check_for_update():
-                        if i.type == "exit_button":
-                            pygame.quit()
-                            sys.exit()
+                    if not i.rect.collidepoint(click_pos):
+                        continue
 
-                        if i.type == "play_button":
-                            self.new_load = True
-                            if self.play_button in self.mm_buttons:
-                                self.mm_buttons.remove(self.play_button)
+                    handled_main_menu_click = True
 
-                        if i.type == "settings_button":
-                            self.menu_state = "settings_menu"
-                            self.resolution.show()
-                            self.language.show()
+                    if i.type == "exit_button":
+                        pygame.quit()
+                        sys.exit()
+
+                    if i.type == "play_button":
+                        self.new_load = True
+                        if self.play_button in self.mm_buttons:
+                            self.mm_buttons.remove(self.play_button)
+                        break
+
+                    if i.type == "settings_button":
+                        self.load_settings_into_menu()
+                        self.menu_state = "settings_menu"
+                        self.resolution.show()
+                        self.language.show()
+                        break
+
+                if handled_main_menu_click:
+                    continue
 
                 for i in self.new_load_buttons:
-                    if i.check_for_update():
-                        if i.type == "newgame_button":
-                            self.menu_state = "game"
+                    if not i.rect.collidepoint(click_pos):
+                        continue
 
-                        if i.type == "loadgame_button":
-                            pass
+                    if i.type == "newgame_button":
+                        self.prepare_new_game()
+                        self.menu_state = "game"
+                        break
+
+                    if i.type == "loadgame_button":
+                        break
 
         for i in self.mm_buttons:
             i.update()
@@ -828,14 +1346,8 @@ class engine:
                 for i in self.settings_buttons:
                     if i.check_for_update():
                         if i.type == "settings_back_button":
-                            self.menu_state = "start_menu"
-
-                            if self.new_load and self.play_button not in self.mm_buttons:
-                                self.mm_buttons.insert(2, self.play_button)
-
-                            self.new_load = False
-                            self.resolution.hide()
-                            self.language.hide()
+                            self.apply_and_exit_settings()
+                            return
 
                 for i in self.settings_switches:
                     if i.check_for_update():
@@ -855,35 +1367,150 @@ class engine:
         self.cusror.update()
         self.cusror.draw()
 
-    def create_new_world_data(self):
-        world_data, obj_data = generate_world_data()
+    def pause_menu(self):
+        self.cusror.update()
+        self.render()
 
-        with open(
-            'NOQA/world_generation/configs/world_gen_configs.json',
-            'r',
-            encoding='utf-8',
-        ) as f:
-            configs = json.load(f)
+        self.screen.blit(self.pause_overlay, (0, 0))
+        pygame.draw.rect(
+            self.screen,
+            (33, 15, 15),
+            self.pause_panel_rect,
+            border_radius=14,
+        )
+        pygame.draw.rect(
+            self.screen,
+            (174, 36, 36),
+            self.pause_panel_rect,
+            4,
+            border_radius=14,
+        )
 
-        self.world_tiles_w = int(configs['window']['width'])
-        self.world_tiles_h = int(configs['window']['height'])
+        self.screen.blit(self.pause_txt_outline, self.pause_txt_rect_outline)
+        self.screen.blit(self.pause_txt, self.pause_txt_rect)
+        self.screen.blit(self.pause_hint_txt, self.pause_hint_txt_rect)
+
+        events = pygame.event.get()
+
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.resume_game()
+                return
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = pygame.mouse.get_pos()
+
+                for button in self.pause_buttons:
+                    if not button.rect.collidepoint(mouse_pos):
+                        continue
+
+                    if button.type == "pause_resume_button":
+                        self.resume_game()
+                        return
+
+                    if button.type == "pause_main_menu_button":
+                        self.return_to_main_menu()
+                        return
+
+                    if button.type == "pause_exit_button":
+                        pygame.quit()
+                        sys.exit()
+
+        for button in self.pause_buttons:
+            button.update()
+
+        self.cusror.draw()
+
+    def game_over_menu(self):
+        self.cusror.update()
+        self.render()
+
+        self.screen.blit(self.game_over_overlay, (0, 0))
+        pygame.draw.rect(
+            self.screen,
+            (33, 15, 15),
+            self.game_over_panel_rect,
+            border_radius=14,
+        )
+        pygame.draw.rect(
+            self.screen,
+            (174, 36, 36),
+            self.game_over_panel_rect,
+            4,
+            border_radius=14,
+        )
+
+        self.screen.blit(self.game_over_txt_outline, self.game_over_txt_rect_outline)
+        self.screen.blit(self.game_over_txt, self.game_over_txt_rect)
+
+        reached_text = self.game_over_info_font.render(
+            f"You reached world {self.game_over_world_reached}.",
+            True,
+            "white",
+        )
+        reached_rect = reached_text.get_rect(
+            center=(self.XRes / 2, (self.YRes / 2) - 30)
+        )
+        cleared_text = self.game_over_info_font.render(
+            f"Worlds cleared: {self.game_over_worlds_cleared}",
+            True,
+            "white",
+        )
+        cleared_rect = cleared_text.get_rect(
+            center=(self.XRes / 2, (self.YRes / 2) - 10)
+        )
+
+        self.screen.blit(reached_text, reached_rect)
+        self.screen.blit(cleared_text, cleared_rect)
+
+        events = pygame.event.get()
+
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = pygame.mouse.get_pos()
+
+                for button in self.game_over_buttons:
+                    if not button.rect.collidepoint(mouse_pos):
+                        continue
+
+                    if button.type == "game_over_main_menu_button":
+                        self.return_to_main_menu()
+                        return
+
+                    if button.type == "game_over_exit_button":
+                        pygame.quit()
+                        sys.exit()
+
+        for button in self.game_over_buttons:
+            button.update()
+
+        self.cusror.draw()
+
+    def create_new_world_data(self, world_width, world_height):
+        world_data, obj_data = generate_world_data(
+            self.world_gen_config_path,
+            width=world_width,
+            height=world_height,
+        )
+
+        self.world_tiles_w = int(world_width)
+        self.world_tiles_h = int(world_height)
 
         self.world_width_offset = self.world_tiles_w * self.tile_size / 2
         self.world_height_offset = self.world_tiles_h * self.tile_size / 2
 
         self.tile_lookup.clear()
         self.floor_chunks.clear()
-        self.object_chunks = {}
+        self.object_chunks.clear()
         self.spawnable_land_tiles = []
-
-        self.floor_tiles.empty()
-        self.world.empty()
-        self.assets.empty()
-        self.resources.empty()
-        self.scenery.empty()
-        self.AI.empty()
-        self.friendlyAI.empty()
-        self.enemiesAI.empty()
 
         for row in world_data:
             for j in row:
@@ -974,6 +1601,8 @@ class engine:
 
     def display_HUD(self):
         player = self.get_player_sprite()
+        if player is None:
+            return
 
         self.screen.blit(self.head_box, self.head_box_rect)
 
@@ -1002,6 +1631,140 @@ class engine:
 
         self.screen.blit(self.hp_text, self.hp_text_rect)
         self.screen.blit(self.stam_text, self.stam_text_rect)
+
+        info_lines = [
+            ("LVL", f"{max(1, self.current_stage)}", (255, 224, 188)),
+            ("LEFT", f"{len(self.enemiesAI)}", (255, 245, 222)),
+            ("DIFF", f"x{self.get_stage_difficulty_multiplier():.2f}", (166, 232, 222)),
+        ]
+
+        info_surfaces = []
+        for label, value, color in info_lines:
+            line_text = f"{label} {value}"
+            info_surfaces.append(
+                (
+                    line_text,
+                    self.HUD_info_font.render(line_text, True, color),
+                )
+            )
+
+        padding = 8
+        line_spacing = 3
+        content_width = max(surface.get_width() for _, surface in info_surfaces)
+        content_height = (
+            sum(surface.get_height() for _, surface in info_surfaces)
+            + (line_spacing * (len(info_surfaces) - 1))
+        )
+        panel_width = max(self.head_box_rect.width + 12, content_width + (padding * 2))
+        panel_height = max(
+            self.head_box_rect.height - 10,
+            content_height + (padding * 2) + 10,
+        )
+        panel_rect = pygame.Rect(0, 0, panel_width, panel_height)
+        panel_rect.midleft = (
+            self.head_box_rect.right + 18,
+            self.head_box_rect.centery,
+        )
+
+        if panel_rect.right > self.XRes - 16:
+            panel_rect.right = self.XRes - 16
+
+        if panel_rect.top < 16:
+            panel_rect.top = 16
+
+        if panel_rect.bottom > self.YRes - 16:
+            panel_rect.bottom = self.YRes - 16
+
+        pygame.draw.rect(
+            self.screen,
+            (233, 146, 76),
+            panel_rect,
+            border_radius=14,
+        )
+
+        inner_rect = panel_rect.inflate(-6, -6)
+        pygame.draw.rect(
+            self.screen,
+            (36, 63, 71),
+            inner_rect,
+            border_radius=11,
+        )
+
+        accent_rect = pygame.Rect(
+            inner_rect.left + 8,
+            inner_rect.top + 7,
+            inner_rect.width - 16,
+            6,
+        )
+        pygame.draw.rect(
+            self.screen,
+            (126, 214, 210),
+            accent_rect,
+            border_radius=4,
+        )
+
+        current_y = accent_rect.bottom + 8
+        for line, surface in info_surfaces:
+            shadow_surface = self.HUD_info_font.render(line, True, (12, 20, 23))
+            shadow_pos = (inner_rect.left + padding + 1, current_y + 1)
+            self.screen.blit(shadow_surface, shadow_pos)
+            self.screen.blit(surface, (inner_rect.left + padding, current_y))
+            current_y += surface.get_height() + line_spacing
+
+    def draw_ai_status_overlays(self, visible_entities):
+        screen_rect = pygame.Rect(0, 0, self.screen_width, self.screen_height)
+
+        for _, _, _, sprite in visible_entities:
+            if sprite not in self.AI or getattr(sprite, "is_dead", False):
+                continue
+
+            screen_anchor = sprite.rect.move(-self.cameraX, -self.cameraY)
+
+            if not screen_anchor.colliderect(screen_rect):
+                continue
+
+            bar_width = max(18, min(42, int(screen_anchor.width * 0.95)))
+            bar_height = 5
+            bar_rect = pygame.Rect(0, 0, bar_width, bar_height)
+            bar_rect.midbottom = (screen_anchor.centerx, screen_anchor.top - 4)
+
+            hp_text = f"{max(0, int(sprite.hp))}/{int(sprite.max_hp)}"
+            text_surface = self.AI_status_font.render(hp_text, True, (245, 245, 245))
+            text_shadow = self.AI_status_font.render(hp_text, True, (18, 18, 18))
+            text_rect = text_surface.get_rect(midbottom=(bar_rect.centerx, bar_rect.top - 2))
+
+            top_bound = min(bar_rect.top, text_rect.top)
+            if top_bound < 2:
+                shift = 2 - top_bound
+                bar_rect.y += shift
+                text_rect.y += shift
+
+            if bar_rect.left < 2:
+                shift = 2 - bar_rect.left
+                bar_rect.x += shift
+                text_rect.x += shift
+            elif bar_rect.right > self.screen_width - 2:
+                shift = bar_rect.right - (self.screen_width - 2)
+                bar_rect.x -= shift
+                text_rect.x -= shift
+
+            background_rect = bar_rect.inflate(2, 2)
+            fill_width = int(bar_rect.width * max(0.0, min(1.0, sprite.hp / sprite.max_hp)))
+            fill_rect = pygame.Rect(bar_rect.left, bar_rect.top, fill_width, bar_rect.height)
+
+            if sprite in self.enemiesAI:
+                bar_color = (210, 78, 72)
+            else:
+                bar_color = (88, 196, 112)
+
+            pygame.draw.rect(self.screen, (22, 22, 22), background_rect, border_radius=4)
+            pygame.draw.rect(self.screen, (60, 60, 60), bar_rect, border_radius=3)
+
+            if fill_rect.width > 0:
+                pygame.draw.rect(self.screen, bar_color, fill_rect, border_radius=3)
+
+            self.screen.blit(text_shadow, text_rect.move(1, 1))
+            self.screen.blit(text_surface, text_rect)
 
     def draw_debug_overlays(self, visible_floor_chunks, visible_entities, player, cull_rect):
         if self.debug_draw_mode == 0:
@@ -1203,6 +1966,8 @@ class engine:
         if visible_entities:
             self.screen.blits([(img, pos) for _, img, pos, _ in visible_entities])
 
+        self.draw_ai_status_overlays(visible_entities)
+
         if self.debug and player is not None:
             debug404(
                 [
@@ -1236,10 +2001,6 @@ class engine:
             self.f_cooldown = 0
 
         keys = pygame.key.get_pressed()
-
-        if keys[pygame.K_ESCAPE]:
-            pygame.quit()
-            sys.exit()
 
         if keys[pygame.K_F1] and self.f_cooldown <= 0:
             self.debug = not self.debug
@@ -1288,6 +2049,14 @@ class engine:
 
         self.AI.update(self)
 
+        if player.state == 'death' and player.frame >= 7:
+            self.enter_game_over()
+            return
+
+        if self.run_in_progress and len(self.enemiesAI) == 0:
+            self.advance_to_next_stage()
+            return
+
         self.water_anim_timer += self.dt
         if self.water_anim_timer >= self.water_anim_speed:
             self.water_anim_timer = 0
@@ -1321,12 +2090,25 @@ class engine:
                     self.cameraY = new_camera_y
 
     def run(self):
-        self.screen.fill("black")
+        player = self.get_player_sprite()
+        player_is_dead = player is not None and player.state == 'death'
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
+            if (
+                event.type == pygame.KEYDOWN
+                and event.key == pygame.K_ESCAPE
+                and not player_is_dead
+            ):
+                self.pause_game()
+                return
+
         self.game_updates()
+
+        if self.menu_state != "game":
+            return
+
         self.render()

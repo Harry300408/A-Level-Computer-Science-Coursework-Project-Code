@@ -320,7 +320,29 @@ def place_ore_type(
     return out  # return ore placement mask
 
 
-def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
+def apply_small_world_edge_bias(
+    heightmap: np.ndarray,
+    mask: np.ndarray,
+    map_scale: float,
+) -> np.ndarray:
+    # Small maps need a little extra downward pressure at the edges so coastlines
+    # still form naturally without forcing a hard deep-water border around the map.
+    clamped_scale = min(1.0, max(0.0, float(map_scale)))
+    bias_strength = (1.0 - clamped_scale) * 0.28
+
+    if bias_strength <= 0.0:
+        return heightmap
+
+    edge_fade = np.power(1.0 - mask, 1.35)
+    return np.clip(heightmap - (edge_fade * bias_strength), 0.0, 1.0).astype(np.float32)
+
+
+def generate_world_data(
+    config_path: str = CONFIG_PATH,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+) -> Tuple[list, list]:
+    print(f"[ENGINE] generate_world_data called with config: {config_path}")  # Debug log for function call
     # Main world generation pipeline:
     # 1) Read config and determine seed/dimensions
     # 2) Generate height/moisture/temp noise
@@ -333,8 +355,12 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
 
     cfg = load_config(config_path)  # Load config dictionary
 
-    W = int(cfg["window"]["width"])  # Map width in tiles
-    H = int(cfg["window"]["height"])  # Map height in tiles
+    W = int(width if width is not None else cfg["window"]["width"])  # Map width in tiles
+    H = int(height if height is not None else cfg["window"]["height"])  # Map height in tiles
+
+    default_w = max(1, int(cfg["window"]["width"]))
+    default_h = max(1, int(cfg["window"]["height"]))
+    map_scale = min(W / default_w, H / default_h)
 
     gen = cfg["generation"]  # Convenience alias to generation sub-config
     seed = gen.get("seed", None)  # Get seed if specified
@@ -372,6 +398,7 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
     heightmap = normalize01(0.70 * height_noise + 0.30 * mask)  # Mix base terrain with island mask
     heightmap = heightmap * (0.30 + 0.70 * mask)  # Further suppress edges so oceans dominate around perimeter
     heightmap = normalize01(heightmap)  # Re-normalize after shaping
+    heightmap = apply_small_world_edge_bias(heightmap, mask, map_scale)
 
     rules = cfg["biomes"].get("rules", [])  # Biome classification rules list
     biome = classify_biomes_from_rules(heightmap, moisture, temp, sea_level, rules)  # Produce biome codes map
@@ -449,6 +476,6 @@ def generate_world_data(config_path: str = CONFIG_PATH) -> Tuple[list, list]:
 
     deep = biome_codes()["deep_water"]  # Deep water code
     non_sea = int(np.count_nonzero(biome != deep))  # Count all tiles that are not deep water (land + shallow)
-    print(f"[WORLD] seed={seed} size={W}x{H} non-sea-tiles={non_sea}")  # Debug summary line
+    print(f"[ENGINE] seed={seed} size={W}x{H} non-sea-tiles={non_sea}")  # Debug summary line
 
     return world_tiles, object_tiles  # Return both grids for use by the game
