@@ -135,7 +135,10 @@ def load_settings():
     defaults = _load_defaults()
 
     if not os.path.exists(SETTINGS_FILE):
+        print(f"[ENGINE] Settings file '{SETTINGS_FILE}' not found. Creating new settings file with default values...")
         return save_settings(defaults)
+
+    print(f"[ENGINE] Settings file found. Loading settings from '{SETTINGS_FILE}'...")
 
     config = configparser.ConfigParser()
     config.read(SETTINGS_FILE)
@@ -145,36 +148,43 @@ def load_settings():
 
     try:
         loaded_settings["xres"] = config.getint("RESOLUTION", "xres")
+        print(f"[ENGINE] Loaded xres: {loaded_settings['xres']}")
     except (configparser.Error, TypeError, ValueError):
         file_was_incomplete = True
 
     try:
         loaded_settings["yres"] = config.getint("RESOLUTION", "yres")
+        print(f"[ENGINE] Loaded yres: {loaded_settings['yres']}")
     except (configparser.Error, TypeError, ValueError):
         file_was_incomplete = True
 
     try:
         loaded_settings["fullscreen"] = config.getboolean("SCREEN", "fullscreen")
+        print(f"[ENGINE] Loaded fullscreen: {loaded_settings['fullscreen']}")
     except (configparser.Error, TypeError, ValueError):
         file_was_incomplete = True
 
     try:
         loaded_settings["fps"] = config.getint("SCREEN", "fps")
+        print(f"[ENGINE] Loaded fps: {loaded_settings['fps']}")
     except (configparser.Error, TypeError, ValueError):
         file_was_incomplete = True
 
     try:
         loaded_settings["language"] = config.get("LANGUAGE", "locale")
+        print(f"[ENGINE] Loaded language: {loaded_settings['language']}")
     except (configparser.Error, TypeError, ValueError):
         file_was_incomplete = True
 
     try:
         loaded_settings["music_volume"] = config.getint("AUDIO", "music_volume")
+        print(f"[ENGINE] Loaded music_volume: {loaded_settings['music_volume']}")
     except (configparser.Error, TypeError, ValueError):
         file_was_incomplete = True
 
     try:
         loaded_settings["sfx_volume"] = config.getint("AUDIO", "sfx_volume")
+        print(f"[ENGINE] Loaded sfx_volume: {loaded_settings['sfx_volume']}")
     except (configparser.Error, TypeError, ValueError):
         file_was_incomplete = True
 
