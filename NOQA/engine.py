@@ -395,7 +395,7 @@ class engine:
         )
 
         self.music_slider = Slider(
-            ((self.XRes / 2) - 62.5, (self.YRes / 2) - 35),
+            ((self.XRes / 2) - 20, (self.YRes / 2) - 35),
             (250, 30),
             self.music_volume / 100,
             0,
@@ -403,7 +403,7 @@ class engine:
         )
 
         self.sfx_slider = Slider(
-            ((self.XRes / 2) + 62.5, (self.YRes / 2) + 20),
+            ((self.XRes / 2) + 20, (self.YRes / 2) + 20),
             (250, 30),
             self.sfx_volume / 100,
             0,
@@ -735,11 +735,24 @@ class engine:
 
     def build_stage(self, player_progress=None):
         world_width, world_height = self.get_stage_world_size(self.current_stage)
-        self.clear_stage_sprites()
-        self.create_new_world_data(world_width, world_height)
+        player = None
 
-        CC([self.player, self.render_items])
-        player = self.get_player_sprite()
+        for _ in range(8):
+            self.clear_stage_sprites()
+            self.create_new_world_data(world_width, world_height)
+
+            CC([self.player, self.render_items])
+            player = self.get_player_sprite()
+            if player is None:
+                break
+
+            spawn_tile = self.find_player_spawn_tile(player)
+            if spawn_tile is None:
+                continue
+
+            self.set_player_spawn_tile(spawn_tile[0], spawn_tile[1], player=player)
+            break
+
         if player is not None:
             self.restore_player_progress(player, player_progress)
 
@@ -820,6 +833,14 @@ class engine:
 
         base_hitbox = player.hitbox if hasattr(player, "hitbox") else player.rect
         return base_hitbox.move(self.cameraX, self.cameraY)
+
+    def get_player_world_hitbox_for_camera(self, camera_x, camera_y, player=None):
+        player = self.get_player_sprite() if player is None else player
+        if player is None:
+            return None
+
+        base_hitbox = player.hitbox if hasattr(player, "hitbox") else player.rect
+        return base_hitbox.move(camera_x, camera_y)
 
     def get_nearby_tiles(self, world_x, world_y, radius=2):
         tile_x = int((world_x + self.world_width_offset) // self.tile_size)
@@ -996,6 +1017,102 @@ class engine:
         world_x = (tile_x * self.tile_size) - self.world_width_offset + (self.tile_size // 2)
         world_y = (tile_y * self.tile_size) - self.world_height_offset + self.tile_size
         return world_x, world_y
+
+    def get_camera_for_player_spawn(self, world_x, world_y, player=None):
+        player = self.get_player_sprite() if player is None else player
+        if player is None:
+            return self.cameraX, self.cameraY
+
+        base_hitbox = player.hitbox if hasattr(player, "hitbox") else player.rect
+        return (
+            world_x - base_hitbox.midbottom[0],
+            world_y - base_hitbox.midbottom[1],
+        )
+
+    def is_player_spawn_tile_safe(self, tile_x, tile_y, player=None):
+        player = self.get_player_sprite() if player is None else player
+        if player is None:
+            return False
+
+        spawn_world_x, spawn_world_y = self.tile_to_world_spawn_pos(tile_x, tile_y)
+        camera_x, camera_y = self.get_camera_for_player_spawn(
+            spawn_world_x,
+            spawn_world_y,
+            player=player,
+        )
+        player_hitbox = self.get_player_world_hitbox_for_camera(
+            camera_x,
+            camera_y,
+            player=player,
+        )
+        if player_hitbox is None:
+            return False
+
+        world_bounds = pygame.Rect(
+            -self.world_width_offset,
+            -self.world_height_offset,
+            self.world_tiles_w * self.tile_size,
+            self.world_tiles_h * self.tile_size,
+        )
+        if not world_bounds.contains(player_hitbox):
+            return False
+
+        radius = max(
+            2,
+            int(max(player_hitbox.width, player_hitbox.height) / self.tile_size) + 1,
+        )
+
+        nearby_tiles = self.get_nearby_tiles(player_hitbox.centerx, player_hitbox.centery, radius=radius)
+        for tile in nearby_tiles:
+            tile_hitbox = tile.hitbox if hasattr(tile, "hitbox") and tile.hitbox is not None else tile.rect
+            blocked = getattr(tile, "_isSolid", False) or getattr(tile, "_tile_type", "") in {
+                "deep_water",
+                "shallow_water",
+            }
+            if blocked and tile_hitbox.colliderect(player_hitbox):
+                return False
+
+        nearby_objects = self.get_nearby_objects(player_hitbox.centerx, player_hitbox.centery, radius=radius)
+        for obj in nearby_objects:
+            obj_hitbox = obj.hitbox if hasattr(obj, "hitbox") and obj.hitbox is not None else obj.rect
+            if getattr(obj, "_isSolid", False) and obj_hitbox.colliderect(player_hitbox):
+                return False
+
+        return True
+
+    def find_player_spawn_tile(self, player=None):
+        player = self.get_player_sprite() if player is None else player
+        if player is None or not self.spawnable_land_tiles:
+            return None
+
+        center_tile_x = self.world_tiles_w // 2
+        center_tile_y = self.world_tiles_h // 2
+        ordered_tiles = sorted(
+            self.spawnable_land_tiles,
+            key=lambda tile: (
+                (tile[0] - center_tile_x) ** 2 + (tile[1] - center_tile_y) ** 2,
+                abs(tile[0] - center_tile_x) + abs(tile[1] - center_tile_y),
+            ),
+        )
+
+        for tile_x, tile_y in ordered_tiles:
+            if self.is_player_spawn_tile_safe(tile_x, tile_y, player=player):
+                return tile_x, tile_y
+
+        return None
+
+    def set_player_spawn_tile(self, tile_x, tile_y, player=None):
+        player = self.get_player_sprite() if player is None else player
+        if player is None:
+            return False
+
+        spawn_world_x, spawn_world_y = self.tile_to_world_spawn_pos(tile_x, tile_y)
+        self.cameraX, self.cameraY = self.get_camera_for_player_spawn(
+            spawn_world_x,
+            spawn_world_y,
+            player=player,
+        )
+        return True
 
     def is_tile_navigable_for_ai_goal(self, tile_x, tile_y, ignore_entity=None):
         if tile_x < 0 or tile_y < 0:
